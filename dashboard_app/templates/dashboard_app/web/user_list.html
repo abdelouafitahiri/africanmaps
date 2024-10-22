@@ -1,0 +1,273 @@
+{% extends 'dashboard_app/web/base.html' %}
+{% load static %}
+
+{% block title %}Liste des Utilisateurs{% endblock title %}
+
+
+{% block content %}
+
+<div class="container-xxl"> 
+    <div class="row">
+        <div class="col-12">
+            {% if messages %}
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm border-theme-white-2" role="alert">
+                    <div class="d-inline-flex justify-content-center align-items-center thumb-xs 
+                        {% if message.tags == 'success' %} bg-success
+                        {% elif message.tags == 'danger' %} bg-danger
+                        {% elif message.tags == 'warning' %} bg-warning
+                        {% elif message.tags == 'info' %} bg-purple
+                        {% else %} bg-secondary {% endif %} 
+                        rounded-circle mx-auto me-1">
+                        <i class="fas 
+                            {% if message.tags == 'success' %} fa-check
+                            {% elif message.tags == 'danger' %} fa-xmark
+                            {% elif message.tags == 'warning' %} fa-exclamation
+                            {% elif message.tags == 'info' %} fa-info
+                            {% else %} fa-info {% endif %}
+                            align-self-center mb-0 text-white"></i>
+                    </div>
+                    {{ message|safe }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                {% endfor %}
+            {% endif %}
+            <div class="card">
+                <div class="card-header">
+                    <div class="row align-items-center">
+                        <div class="col">                      
+                            <h4 class="card-title">Liste des Utilisateurs</h4>                      
+                        </div><!--end col-->
+                        <div class="col-auto"> 
+                            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addUserModal"><i class="fas fa-plus me-1"></i> Ajouter un Nouvel Utilisateur</button>           
+                        </div><!--end col-->
+                    </div><!--end row-->                                  
+                </div><!--end card-header-->
+                <div class="card-body pt-0">
+                    <div class="table-responsive">
+                        <table class="table mb-0" id="datatable_1">
+                            <thead class="table-light">
+                                <tr>
+                                    <th></th>
+                                    <th>Nom</th>
+                                    <th>E-mail</th>
+                                    <th>Rôle</th>
+                                    <th>Statut</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for user in users %}
+                                <tr>
+                                    <td class="d-flex align-items-center">
+                                        <img src="{% static 'assets/icons/icon_user.svg' %}" class="me-2 thumb-md align-self-center rounded" style="width: 50px;" alt="User Icon">
+                                    </td>
+                                    <td>{{ user.get_full_name }}</td>
+                                    <td><a href="mailto:{{ user.email }}">{{ user.email }}</a></td>
+                                    <td>{{ user.is_superuser|yesno:"Administrateur,Utilisateur" }}</td>
+                                    <td>
+                                        {% if user.is_active %}
+                                            <span class="badge rounded text-success bg-success-subtle">Actif</span>
+                                        {% else %}
+                                            <span class="badge rounded text-white bg-warning">Inactif</span>
+                                        {% endif %}
+                                    </td>                                    
+                                    <td>
+                                        <button class="btn {% if user.is_active %}btn-warning{% else %}btn-success{% endif %} btn-sm" data-bs-toggle="modal" data-bs-target="{% if user.is_active %}#archiveUserModal{{ user.id }}{% else %}#activateUserModal{{ user.id }}{% endif %}">
+                                            {% if user.is_active %}
+                                                <i class="las la-archive"></i>
+                                            {% else %}
+                                                <i class="las la-check"></i>
+                                            {% endif %}
+                                        </button>
+                                        <button class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteUserModal{{ user.id }}">
+                                            <i class="las la-trash-alt"></i>
+                                        </button>
+                                        <button class="btn btn-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#editUserModal{{ user.id }}">
+                                            <i class="las la-pen"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+
+                                <!-- Modal for deleting user -->
+                                <div class="modal fade" id="deleteUserModal{{ user.id }}" tabindex="-1" aria-labelledby="deleteUserModalLabel" aria-hidden="true">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="deleteUserModalLabel">Supprimer l'utilisateur</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <p>Êtes-vous sûr de vouloir supprimer cet utilisateur ?</p>
+                                                <p><strong>Cet action ne peut pas être annulée.</strong></p>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                                                <form method="POST">
+                                                    {% csrf_token %}
+                                                    <input type="hidden" name="user_id" value="{{ user.id }}">
+                                                    <input type="hidden" name="action" value="delete">
+                                                    <button type="submit" class="btn btn-danger">Supprimer</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Modal for archiving user -->
+                                <div class="modal fade" id="archiveUserModal{{ user.id }}" tabindex="-1" aria-labelledby="archiveUserModalLabel" aria-hidden="true">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="archiveUserModalLabel">Archiver l'utilisateur</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <p>Êtes-vous sûr de vouloir archiver cet utilisateur ?</p>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                                                <form method="POST">
+                                                    {% csrf_token %}
+                                                    <input type="hidden" name="user_id" value="{{ user.id }}">
+                                                    <input type="hidden" name="action" value="archive">
+                                                    <button type="submit" class="btn btn-warning">Archiver</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Modal for activating user -->
+                                <div class="modal fade" id="activateUserModal{{ user.id }}" tabindex="-1" aria-labelledby="activateUserModalLabel" aria-hidden="true">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="activateUserModalLabel">Activer l'utilisateur</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <p>Êtes-vous sûr de vouloir activer cet utilisateur ?</p>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                                                <form method="POST">
+                                                    {% csrf_token %}
+                                                    <input type="hidden" name="user_id" value="{{ user.id }}">
+                                                    <input type="hidden" name="action" value="activate">
+                                                    <button type="submit" class="btn btn-success">Activer</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center">Aucun utilisateur trouvé.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>                    
+                </div>
+            </div>
+        </div> <!-- end col -->
+    </div> <!-- end row -->  
+
+    <!-- Modal for adding user -->
+    <div class="modal fade" id="addUserModal" tabindex="-1" aria-labelledby="addUserModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addUserModalLabel">Ajouter un Nouvel Utilisateur</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form method="POST">
+                        {% csrf_token %}
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="username" class="form-label">Nom d'utilisateur</label>
+                                <input type="text" class="form-control" name="username" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="email" class="form-label">Email</label>
+                                <input type="email" class="form-control" name="email" required>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="first_name" class="form-label">Prénom</label>
+                                <input type="text" class="form-control" name="first_name" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="last_name" class="form-label">Nom</label>
+                                <input type="text" class="form-control" name="last_name" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="password1" class="form-label">Mot de passe</label>
+                            <input type="password" class="form-control" name="password1" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="password2" class="form-label">Confirmer le mot de passe</label>
+                            <input type="password" class="form-control" name="password2" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Rôle</label>
+                            <select class="form-select" name="is_admin" required>
+                                <option value="false">Utilisateur</option>
+                                <option value="true">Administrateur</option>
+                            </select>
+                        </div>
+                        <button type="submit" name="action" value="add" class="btn btn-primary">Ajouter Utilisateur</button>
+                    </form>
+                    
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for editing user -->
+    {% for user in users %}
+    <div class="modal fade" id="editUserModal{{ user.id }}" tabindex="-1" aria-labelledby="editUserModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editUserModalLabel">Modifier l'utilisateur</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form method="POST">
+                        {% csrf_token %}
+                        <input type="hidden" name="user_id" value="{{ user.id }}">
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Nom d'utilisateur</label>
+                            <input type="text" class="form-control" name="username" value="{{ user.username }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" class="form-control" name="email" value="{{ user.email }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="first_name" class="form-label">Prénom</label>
+                            <input type="text" class="form-control" name="first_name" value="{{ user.first_name }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="last_name" class="form-label">Nom</label>
+                            <input type="text" class="form-control" name="last_name" value="{{ user.last_name }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Mot de passe (laisser vide pour ne pas changer)</label>
+                            <input type="password" class="form-control" name="password">
+                        </div>
+                        <button type="submit" name="action" value="edit" class="btn btn-primary">Enregistrer les modifications</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+
+{% endblock content %}

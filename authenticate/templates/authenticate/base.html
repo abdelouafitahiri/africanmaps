@@ -1,0 +1,42 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" dir="ltr" data-startbar="dark" data-bs-theme="light">
+
+<head>
+    <meta charset="utf-8" />
+    <title>{% block title %}AfricanMaps{% endblock title %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta content="" name="description" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+
+    <!-- App favicon -->
+    <link rel="shortcut icon" href="{% static 'assets/images/favicon.ico' %}">
+
+    <!-- App css -->
+    <link href="{% static 'assets/css/bootstrap.min.css' %}" rel="stylesheet" type="text/css" />
+    <link href="{% static 'assets/css/icons.min.css' %}" rel="stylesheet" type="text/css" />
+    <link href="{% static 'assets/css/app.min.css' %}" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" href="https://js.arcgis.com/4.30/esri/themes/light/main.css" />
+    <script src="https://js.arcgis.com/4.30/"></script>
+  
+</head>
+
+<body>
+
+
+    <!-- Main Content Wrapper -->
+    <div class="page-wrapper">
+        <div class="container-xxl">
+            {% block content %}
+            {% endblock content %}
+        </div>
+    </div>
+
+
+    <!-- Javascript -->
+    <script src="{% static 'assets/libs/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+    <script src="{% static 'assets/libs/simplebar/simplebar.min.js' %}"></script>
+    <script src="{% static 'assets/js/app.js' %}"></script>
+     
+</body>
+</html>
