@@ -26,12 +26,7 @@ SECRET_KEY = '5&f+g839&^encn^exae*j$5%72f06wjv(3r(^ml$pp!kwnstlz'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '.ngrok.io']
-CSRF_TRUSTED_ORIGINS = [
-    'https://8000-patient-boat-82219551.in-ws1.runcode.io',
-    'https://4000-patient-boat-82219551.in-ws1.runcode.io'
-]
-
+ALLOWED_HOSTS = ['.onrender.com', 'localhost']
 
 # Application definition
 
