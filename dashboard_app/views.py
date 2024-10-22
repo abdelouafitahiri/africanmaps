@@ -34,7 +34,7 @@ import xml.etree.ElementTree as ET
 #MOBILE VERSION
 
 def map_mobile(request):
-    return render(request, 'dashboard_app/mobile/index.html')
+    return render(request, 'dashboard_app/mobile/project_map.html')
 
 def save_location_mobile(request):
     if request.method == 'POST':

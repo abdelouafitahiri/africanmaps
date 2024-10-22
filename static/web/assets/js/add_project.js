@@ -52,7 +52,7 @@ require([
   const view = new MapView({
     container: "viewDiv",
     map: map,
-    center: [-118.80543, 34.027],
+    center: [-6.8498, 34.0209],
     zoom: 13,
     ui: {
       components: ["zoom"] // Supprimer les autres composants y compris l'attribution
