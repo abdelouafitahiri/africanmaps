@@ -48,168 +48,183 @@
     </style>
 </head>
 <body class="">
+
+    <!-- Container for Bootstrap Toasts -->
+
+    <div class="toast-container position-fixed p-3" id="toastPlacement" style="z-index: 9999; bottom: 12vh; left: 50%; transform: translateX(-50%);"></div>
     
-  {% if messages %}
-    {% for message in messages %}
-    <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm border-theme-white-2" role="alert">
-        <div class="d-inline-flex justify-content-center align-items-center thumb-xs 
-            {% if message.tags == 'success' %} bg-success
-            {% elif message.tags == 'danger' %} bg-danger
-            {% elif message.tags == 'warning' %} bg-warning
-            {% elif message.tags == 'info' %} bg-purple
-            {% else %} bg-secondary {% endif %} 
-            rounded-circle mx-auto me-1">
-            <i class="fas 
-                {% if message.tags == 'success' %} fa-check
-                {% elif message.tags == 'danger' %} fa-xmark
-                {% elif message.tags == 'warning' %} fa-exclamation
-                {% elif message.tags == 'info' %} fa-info
-                {% else %} fa-info {% endif %}
-                align-self-center mb-0 text-white"></i>
+    {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm border-theme-white-2" role="alert">
+            <div class="d-inline-flex justify-content-center align-items-center thumb-xs 
+                {% if message.tags == 'success' %} bg-success
+                {% elif message.tags == 'danger' %} bg-danger
+                {% elif message.tags == 'warning' %} bg-warning
+                {% elif message.tags == 'info' %} bg-purple
+                {% else %} bg-secondary {% endif %} 
+                rounded-circle mx-auto me-1">
+                <i class="fas 
+                    {% if message.tags == 'success' %} fa-check
+                    {% elif message.tags == 'danger' %} fa-xmark
+                    {% elif message.tags == 'warning' %} fa-exclamation
+                    {% elif message.tags == 'info' %} fa-info
+                    {% else %} fa-info {% endif %}
+                    align-self-center mb-0 text-white"></i>
+            </div>
+            {{ message|safe }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
-        {{ message|safe }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-    {% endfor %}
-  {% endif %}
-  <script>
-    // Set a timeout to automatically close the alert after 15 seconds (15000 milliseconds)
-    setTimeout(function() {
-        const alerts = document.querySelectorAll('.alert');
-        alerts.forEach(function(alert) {
-            alert.classList.remove('show');
-            alert.classList.add('fade');
-            setTimeout(function() {
-                alert.remove();
-            }, 500); // Delay for fade-out animation
-        });
-    }, 10000);
-  </script>
+        {% endfor %}
+    {% endif %}
+    <script>
+        // Set a timeout to automatically close the alert after 15 seconds (15000 milliseconds)
+        setTimeout(function() {
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(function(alert) {
+                alert.classList.remove('show');
+                alert.classList.add('fade');
+                setTimeout(function() {
+                    alert.remove();
+                }, 500); // Delay for fade-out animation
+            });
+        }, 10000);
+    </script>
 
 
                 
-            <!-- Container for Bootstrap Toasts -->
-            <div class="toast-container position-absolute p-3 top-0 end-0" id="toastPlacement"></div>
-            
-            
-            <!-- Modal pour ajouter un nouvel élément avec la capture de caméra -->
-            <div class="modal fade" id="CreateItemModal" tabindex="-1" aria-labelledby="CreateItemModalLabel" aria-hidden="true">
-                <div class="modal-dialog modal-fullscreen-lg-down">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title" id="CreateItemModalLabel">Créer un élément</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+    
+    
+    <!-- Modal pour ajouter un nouvel élément avec la capture de caméra -->
+    <div class="modal fade" id="CreateItemModal" tabindex="-1" aria-labelledby="CreateItemModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-fullscreen-lg-down">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="CreateItemModalLabel">Créer un élément</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+                </div>
+                <form method="POST" action="{% url 'add_item_mobile' location.id %}" enctype="multipart/form-data">
+                <div class="modal-body">
+                        {% csrf_token %}
+                        <div class="form-group mb-3">
+                            <label for="itemName">Nom</label>
+                            <input type="text" class="form-control" id="itemName" name="name" placeholder="Nom" required />
                         </div>
-                        <form method="POST" action="{% url 'add_item_mobile' location.id %}" enctype="multipart/form-data">
-                        <div class="modal-body">
-                                {% csrf_token %}
-                                <div class="form-group mb-3">
-                                    <label for="itemName">Nom</label>
-                                    <input type="text" class="form-control" id="itemName" name="name" placeholder="Nom" required />
-                                </div>
-                                <div class="form-group mb-3">
-                                    <label for="itemDescription">Description</label>
-                                    <textarea class="form-control" id="itemDescription" name="description" placeholder="Description" required></textarea>
-                                </div>
-                                <div class="form-group mb-3">
-                                    <div class="image-gallery" name="images"></div>
-                                    <button type="button" class="take-video-btn btn btn-warning mb-2">
-                                        <i class="fas fa-camera"></i> Capturer une image/vidéo
-                                    </button>
-                                    <input type="file" class="form-control-file" name="media" id="imageInput" multiple accept="image/*,video/*" hidden />
-                                </div>
-                                <input type="hidden" name="geojson" id="geojsonInput" />
+                        <div class="form-group mb-3">
+                            <label for="itemDescription">Description</label>
+                            <textarea class="form-control" id="itemDescription" name="description" placeholder="Description" required></textarea>
                         </div>
-                        <div class="modal-footer">
-                            <button type="submit" class="btn btn-primary">Enregistrer</button>
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                        <div class="form-group mb-3">
+                            <div class="image-gallery" name="images"></div>
+                            <button type="button" class="take-video-btn btn btn-warning mb-2">
+                                <i class="fas fa-camera"></i> Capturer une image/vidéo
+                            </button>
+                            <input type="file" class="form-control-file" name="media" id="imageInput" multiple accept="image/*,video/*" hidden />
                         </div>
+                        <input type="hidden" name="geojson" id="geojsonInput" />
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Enregistrer</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                </div>
+            </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal pour afficher les détails d'un élément -->
+    <div class="modal fade" id="viewItemModal" tabindex="-1" aria-labelledby="viewItemModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-fullscreen-lg-down">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="viewItemModalLabel">Détails de l'élément</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="text" id="viewItemName" class="form-control mb-2" placeholder="Nom" readonly />
+                    <textarea id="viewItemDescription" class="form-control mb-3" placeholder="Description" readonly></textarea>
+                    <div id="mediaCarousel" class="carousel slide" data-bs-ride="carousel" style="width: 100%; max-height: 400px;">
+                        <div class="carousel-inner" id="carouselInner"></div>
+                        <a class="carousel-control-prev" href="#mediaCarousel" role="button" data-bs-slide="prev">
+                            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                            <span class="sr-only">Précédent</span>
+                        </a>
+                        <a class="carousel-control-next" href="#mediaCarousel" role="button" data-bs-slide="next">
+                            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                            <span class="sr-only">Suivant</span>
+                        </a>
+                    </div>
+                    <div id="placeDetails" class="mt-3 text-center d-none">
+                        <strong id="placeName"></strong><br>
+                        <p id="placeDescription"></p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" id="editButton" class="btn btn-primary btn-sm d-none">Modifier</button>
+                    <button type="button" class="btn btn-danger btn-sm d-none" id="deleteButton" >Supprimer</button>
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Fermer</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal pour modifier un élément -->
+    <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-fullscreen-lg-down">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editModalLabel">Modifier l'élément</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="edit-form" method="POST" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <input type="hidden" id="edit-item-id" name="item_id">
+                        <div class="form-group mb-3">
+                            <label for="edit-name">Nom :</label>
+                            <input type="text" class="form-control" id="edit-name" name="name" required>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="edit-description">Description :</label>
+                            <textarea class="form-control" id="edit-description" name="description" required></textarea>
+                        </div>
+                        <div class="form-group mb-3">
+                            <button type="button" class="take-video-btn btn btn-warning mb-2">
+                                <i class="fas fa-camera"></i> Bouton de capture
+                            </button>
+                            <input type="file" name="media" id="imageInput" multiple accept="image/*,video/*" class="form-control-file" hidden />
+                            <div class="image-gallery mt-3" name="images"></div>
+                        </div>
+                        <input type="hidden" id="edit-geojson" name="geojson">
                     </form>
-                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Enregistrer</button>
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Fermer</button>
                 </div>
             </div>
-
-            <!-- Modal pour afficher les détails d'un élément -->
-            <div class="modal fade" id="viewItemModal" tabindex="-1" aria-labelledby="viewItemModalLabel" aria-hidden="true">
-                <div class="modal-dialog modal-fullscreen-lg-down">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title" id="viewItemModalLabel">Détails de l'élément</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
-                        </div>
-                        <div class="modal-body">
-                            <input type="text" id="viewItemName" class="form-control mb-2" placeholder="Nom" readonly />
-                            <textarea id="viewItemDescription" class="form-control mb-3" placeholder="Description" readonly></textarea>
-                            <div id="mediaCarousel" class="carousel slide" data-bs-ride="carousel" style="width: 100%; max-height: 400px;">
-                                <div class="carousel-inner" id="carouselInner"></div>
-                                <a class="carousel-control-prev" href="#mediaCarousel" role="button" data-bs-slide="prev">
-                                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                                    <span class="sr-only">Précédent</span>
-                                </a>
-                                <a class="carousel-control-next" href="#mediaCarousel" role="button" data-bs-slide="next">
-                                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                                    <span class="sr-only">Suivant</span>
-                                </a>
-                            </div>
-                            <div id="placeDetails" class="mt-3 text-center d-none">
-                                <strong id="placeName"></strong><br>
-                                <p id="placeDescription"></p>
-                            </div>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" id="editButton" class="btn btn-primary btn-sm d-none">Modifier</button>
-                            <button type="button" class="btn btn-danger btn-sm d-none" id="deleteButton" >Supprimer</button>
-                            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Fermer</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Modal pour modifier un élément -->
-            <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
-                <div class="modal-dialog modal-fullscreen-lg-down">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title" id="editModalLabel">Modifier l'élément</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
-                        </div>
-                        <div class="modal-body">
-                            <form id="edit-form" method="POST" enctype="multipart/form-data">
-                                {% csrf_token %}
-                                <input type="hidden" id="edit-item-id" name="item_id">
-                                <div class="form-group mb-3">
-                                    <label for="edit-name">Nom :</label>
-                                    <input type="text" class="form-control" id="edit-name" name="name" required>
-                                </div>
-                                <div class="form-group mb-3">
-                                    <label for="edit-description">Description :</label>
-                                    <textarea class="form-control" id="edit-description" name="description" required></textarea>
-                                </div>
-                                <div class="form-group mb-3">
-                                    <button type="button" class="take-video-btn btn btn-warning mb-2">
-                                        <i class="fas fa-camera"></i> Bouton de capture
-                                    </button>
-                                    <input type="file" name="media" id="imageInput" multiple accept="image/*,video/*" class="form-control-file" hidden />
-                                    <div class="image-gallery mt-3" name="images"></div>
-                                </div>
-                                <input type="hidden" id="edit-geojson" name="geojson">
-                            </form>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="submit" class="btn btn-primary">Enregistrer</button>
-                            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Fermer</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        </div>
+    </div>
 
 
+    
     <div id="page">
         <!-- القائمة السفلية -->
         <div id="footer-bar" class="footer-bar-1 footer-bar-detached">
-            <a href="//"><i class="bi bi-pin-map"></i><span>Projets</span></a>
-            <a href="page-activity.html"><i class="bi bi-map"></i><span>Rapports</span></a>
-            <a href="/map_mobile/" class="circle-nav-2"><i class="bi bi-house-fill"></i><span>Tableau de bord</span></a>
+            <!-- Projets Dropdown -->
+            <a href="/map_mobile/" id="dropdownProjets" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="bi bi-pin-map"></i><span>Ajouter un Projet</span>
+            </a>
+            
+        
+            
+        
+        
+            <!-- Other Links -->
+            <a href="/locations_mobile/"><i class="bi bi-map"></i><span>Gérer les Projets</span></a>
+            <a href="/map_mobile/" class="circle-nav-2">
+                <img src="/static/web/assets/images/logo-sm.png" alt="Logo" style="width: 51px;height: 51px;margin-right: 0px;border-radius: 10px;margin-top: -35px;box-shadow: -1px -1px 4px #46444452;">
+                <span>AfricanMaps</span>
+            </a>
             <a href="page-payments.html"><i class="bi bi-receipt"></i><span>Gérer les Médias</span></a>
             <a href="#" data-bs-toggle="offcanvas" data-bs-target="#menu-sidebar"><i class="bi bi-three-dots"></i><span>Plus</span></a>
         </div>
@@ -220,12 +235,10 @@
 
     </div>
 
-
-
     
 
 
-    <script>
+<script>
     
   require([
   "esri/Map",
@@ -558,251 +571,195 @@
           index: 2 // ترتيب أعلى بقليل من أداة التكبير وأداة الرسم
       });
   
-  
-      function addShowInfoButton() {
-          // استهداف قسم الأزرار في أداة Sketch
-          const infoSection = document.querySelector('.esri-sketch__section.esri-sketch__info-section');
-          
-          // التأكد من أن القسم موجود ولم يتم إضافة الزر سابقًا
-          if (infoSection && !infoSection.querySelector('.custom-show-info-button')) {
-              // إنشاء زر "Show Information" جديد
-              const showInfoButton = document.createElement("calcite-action");
-              showInfoButton.setAttribute("title", "Show Information");
-              showInfoButton.setAttribute("appearance", "solid");
-              showInfoButton.setAttribute("scale", "s");
-              showInfoButton.classList.add('custom-show-info-button'); // كلاس مميز للزر
-              showInfoButton.innerHTML = `<calcite-icon icon="information" scale="s"></calcite-icon>`;
-  
-              // إضافة الزر بعد زر "Duplicate" إذا كان موجودًا
-              const duplicateButton = infoSection.querySelector('calcite-action[title="Duplicate feature"]');
-              if (duplicateButton) {
-                  duplicateButton.parentNode.insertBefore(showInfoButton, duplicateButton.nextSibling);
-              } else {
-                  // إذا لم يكن الزر موجودًا، نضيفه في نهاية القسم
-                  infoSection.appendChild(showInfoButton);
-              }
-  
-              // إضافة حدث للنقر على زر "Show Information"
-              showInfoButton.addEventListener('click', () => {
-                  if (window.selectedGraphic) {
-                      const attributes = window.selectedGraphic.attributes || {};
-                      const media = attributes.media || []; // الميديا
-                      openViewItemModal(attributes.name, attributes.description, media); // عرض المودال
-                  } else {
-                      alert('No selected graphic to show information.');
-                  }
-              });
-          }
-      }
-  
-  
-      // وظيفة لإستبدال زر التكرار بزر الحفظ إذا لم يكن قد أُضيف بعد
-      function updateDuplicateButtonWithSave() {
-          const duplicateButton = document.querySelector('calcite-action[title="Duplicate feature"]');
-          if (duplicateButton && !duplicateButton.dataset.customSaveAdded) {
-              const customSaveButton = duplicateButton.cloneNode(true);
-              duplicateButton.style.display = 'none'; // إخفاء الزر القديم
-  
-              // إعداد خصائص الزر المخصص
-              customSaveButton.setAttribute('title', 'Save feature');
-              customSaveButton.innerHTML = ''; 
-              customSaveButton.setAttribute('scale', 's');
-              customSaveButton.setAttribute('appearance', 'solid');
-  
-              const icon = document.createElement('calcite-icon');
-              icon.setAttribute('icon', 'save'); // استخدام أيقونة الحفظ
-              icon.setAttribute('scale', 's');
-              customSaveButton.appendChild(icon);
-  
-              // إضافة حدث الحفظ
-              customSaveButton.addEventListener('click', () => {
-                  if (window.selectedGraphic && window.selectedGraphic.attributes) {
-                      const itemId = window.selectedGraphic.attributes.id;
-                      saveItem(itemId); // دالة الحفظ المخصصة
-                  } else {
-                      alert("No selected graphic to save.");
-                  }
-              });
-  
-              // استبدال زر "Duplicate" بالزر المعدل
-              duplicateButton.parentNode.appendChild(customSaveButton);
-              duplicateButton.dataset.customSaveAdded = "true"; // منع إضافة الزر مرة أخرى
-          }
-      }
-  
-      // دالة الحفظ المخصصة
-      function saveItem(itemId) {
-          const updatedGraphic = window.selectedGraphic;
-  
-          if (!updatedGraphic) {
-              alert("لا يوجد عنصر محدد للحفظ.");
-              return;
-          }
-  
-          const updatedGeoJSON = updatedGraphic.geometry ? updatedGraphic.geometry.toJSON() : null;
-  
-          if (updatedGeoJSON) {
-              // استدعاء الدالة لحفظ البيانات على الخادم
-              updateGraphicOnServer(itemId, updatedGeoJSON, updatedGraphic);
-          } else {
-              console.error('GeoJSON غير صالح أو غير متوفر.');
-          }
-      }
-  
-      // وظيفة لاستبدال زر الحذف إذا لم يكن قد أُضيف بعد
-      function updateDeleteButton() {
-          const deleteButton = document.querySelector('calcite-action[title="Delete feature"]');
-          if (deleteButton && !deleteButton.dataset.customDeleteAdded) {
-              const customDeleteButton = deleteButton.cloneNode(true);
-              deleteButton.style.display = 'none'; // إخفاء الزر القديم
-  
-              // إعداد مظهر الزر المخصص
-              customDeleteButton.setAttribute('title', 'Custom Delete feature');
-              customDeleteButton.innerHTML = ''; 
-              customDeleteButton.setAttribute('scale', 's');
-              customDeleteButton.setAttribute('appearance', 'solid');
-  
-              const icon = document.createElement('calcite-icon');
-              icon.setAttribute('icon', 'trash'); // استخدام أيقونة الحذف
-              icon.setAttribute('scale', 's');
-              customDeleteButton.appendChild(icon);
-  
-              // إضافة الحدث إلى الزر المخصص
-              customDeleteButton.addEventListener('click', () => {
-                  if (window.selectedGraphic && window.selectedGraphic.attributes) {
-                      const itemId = window.selectedGraphic.attributes.id;
-                      window.deleteItem(itemId); // استخدام دالة الحذف المخصصة
-                  } else {
-                      alert('No selected graphic to delete.');
-                  }
-              });
-  
-              // إضافة الزر المخصص بعد الزر الأصلي
-              deleteButton.parentNode.appendChild(customDeleteButton);
-              deleteButton.dataset.customDeleteAdded = "true"; // منع إضافة الزر مرة أخرى
-          }
-      }
-  
-      // إنشاء MutationObserver لمراقبة DOM
-      const observer = new MutationObserver((mutationsList, observer) => {
-          // إيقاف المراقب مؤقتاً لتجنب الدخول في حلقة لانهائية
-          observer.disconnect();
-  
-          // تحديث الأزرار في كل مرة يتغير فيها الـ DOM
-          updateDuplicateButtonWithSave(); // استبدال زر التكرار بزر الحفظ
-          updateDeleteButton(); // استبدال زر الحذف بزره المخصص
-          addShowInfoButton(); // إضافة زر عرض المعلومات
-  
-          // إعادة تفعيل المراقب بعد إجراء التغييرات
-          observer.observe(document.body, { childList: true, subtree: true });
-      });
-  
-      // بدء مراقبة DOM للتأكد من اكتشاف التغييرات
-      observer.observe(document.body, { childList: true, subtree: true });
-  
-      // Event listener for single-click (select item and store in a variable)
-      view.on("click", function(event) {
-          view.hitTest(event).then(function(response) {
-              const graphic = response.results.find(result => result.graphic.layer === graphicsLayer || result.graphic.layer === sketchLayer);
-  
-              if (graphic) {
-                  const clickedGraphic = graphic.graphic;
-                  window.selectedGraphic = clickedGraphic; // تخزين العنصر المحدد في المتغير العالمي
-  
-                  const attributes = clickedGraphic.attributes || {};
-                  const media = attributes.media || []; // الحصول على الميديا من البيانات
-                  const id = attributes.id || 'undefined-id'; // التأكد من أن الـ ID موجود
 
-                  // تجهيز زر التعديل بالمعلومات المطلوبة لفتح نموذج التعديل عند النقر عليه
-                  const editButton = document.getElementById('editButton');
-                  
-                  // إزالة أي حدث قديم من الزر لتجنب التكرارات
-                  editButton.removeEventListener('click', handleEditButtonClick);
-                  
-                  // إنشاء دالة لمعالجة النقر على زر التعديل
-                  function handleEditButtonClick() {
-                      openEditModal(id, attributes.name, attributes.description, JSON.stringify(clickedGraphic.geometry.toJSON()));
-                  }
-                  
-                  // إضافة حدث جديد إلى الزر باستخدام `addEventListener`
-                  editButton.addEventListener('click', handleEditButtonClick);
-  
-                  // تجهيز زر الحذف بالمعلومات المطلوبة لحذف العنصر عند النقر عليه
-                  const deleteButton = document.getElementById('deleteButton');
-                  
-                  // إزالة أي حدث قديم من الزر لتجنب التكرارات
-                  deleteButton.removeEventListener('click', handleDeleteButtonClick);
-                  
-                  // إنشاء دالة لمعالجة النقر على زر الحذف
-                  function handleDeleteButtonClick() {
-                      deleteItem(id);
-                  }
-  
-                  // إضافة حدث جديد إلى الزر باستخدام `addEventListener`
-                  deleteButton.addEventListener('click', handleDeleteButtonClick);
-  
-              } else {
-                  window.selectedGraphic = null; // إذا لم يتم تحديد عنصر، إفراغ المتغير
-              }
-          });
-      });
-  
+    // إنشاء div جديد يحتوي على الأزرار
+    const actionButtonsDiv = document.createElement('div');
+    actionButtonsDiv.id = 'actionButtonsDiv';
+    actionButtonsDiv.style.display = 'flex';
+    actionButtonsDiv.style.flexDirection = 'column';
+    actionButtonsDiv.style.alignItems = 'center';
+    actionButtonsDiv.style.gap = '5px'; // تقليل المسافة بين الأزرار
 
-      // Event listener for double-click to enable advanced editing of an existing graphic
-      view.on("double-click", function (event) {
-          event.stopPropagation(); // Prevent default double-click zoom behavior
+    // دالة لإنشاء الأزرار بالشكل المطلوب
+    function createButton(icon, title, clickHandler) {
+        const button = document.createElement('button');
+        button.title = title;
 
-          view.hitTest(event).then(function (response) {
-              const graphic = response.results.find(result => result.graphic.layer === graphicsLayer || result.graphic.layer === sketchLayer);
+        // تصميم الزر ليكون أصغر حجمًا
+        button.style.border = 'none'; // إزالة الحدود
+        button.style.background = '#ffffff'; // خلفية بيضاء
+        button.style.width = '32px'; // جعل العرض والارتفاع موحد وصغير
+        button.style.height = '32px';
+        button.style.borderRadius = '5px'; // تقليل الزوايا المستديرة
+        button.style.display = 'flex';
+        button.style.alignItems = 'center';
+        button.style.justifyContent = 'center';
+        button.style.cursor = 'pointer';
+        button.style.boxShadow = '0 2px 10px rgba(0, 0, 0, 0.2);'; // تقليل الظل ليبدو أخف
+        button.style.padding = '0';
+        button.style.margin = '0';
 
-              if (graphic) {
-                  const clickedGraphic = graphic.graphic;
-                  if (clickedGraphic.layer === graphicsLayer) {
-                      // Move the graphic to the sketch layer to allow full editing capabilities
-                      const clonedGraphic = clickedGraphic.clone();
-                      graphicsLayer.remove(clickedGraphic); // Remove the graphic from the original layer
-                      sketchLayer.add(clonedGraphic); // Add the graphic to the sketch layer
+        // إضافة الأيقونة للزر
+        const iconElement = document.createElement('calcite-icon');
+        iconElement.setAttribute('icon', icon);
+        iconElement.setAttribute('scale', 's'); // تصغير الأيقونة ليتناسب مع حجم الزر
+        iconElement.setAttribute('aria-hidden', 'true');
+        button.appendChild(iconElement);
 
-                      // Ensure the graphic has been added to the sketch layer before updating
-                      if (sketchLayer.graphics.includes(clonedGraphic)) {
-                          // Activate full editing mode for the graphic (reshape, move, add/remove parts)
-                          sketch.update({
-                              tool: "reshape", // Enable advanced editing with reshape tool
-                              graphics: [clonedGraphic],
-                              enableScaling: true,
-                              enableRotation: true,
-                              preserveAspectRatio: false, // Allow freeform reshaping
-                              toggleToolOnClick: false, // Keep tool active for continuous editing
-                              enableReshape: true, // Enable reshaping parts of geometry
-                              reshapeOptions: {
-                                  reshapeHandle: "vertices", // Allow editing vertices (for polygons/lines)
-                                  reshapeMode: "all" // Enable reshape for all parts (lines, polygons)
-                              }
-                          });
-                      }
-                  } else if (clickedGraphic.layer === sketchLayer) {
-                      // If already in the sketch layer, directly activate the reshape tool to edit
-                      if (sketchLayer.graphics.includes(clickedGraphic)) {
-                          sketch.update({
-                              tool: "reshape",
-                              graphics: [clickedGraphic],
-                              enableScaling: true,
-                              enableRotation: true,
-                              preserveAspectRatio: false,
-                              toggleToolOnClick: false,
-                              enableReshape: true,
-                              reshapeOptions: {
-                                  reshapeHandle: "vertices",
-                                  reshapeMode: "all"
-                              }
-                          });
-                      }
-                  }
-              }
-          });
-      });
+        // إضافة حدث عند النقر
+        button.addEventListener('click', clickHandler);
+
+        return button;
+    }
+
+    function saveItem(itemId) {
+        const updatedGraphic = window.selectedGraphic;
+
+        if (!updatedGraphic) {
+            alert("لا يوجد عنصر محدد للحفظ.");
+            return;
+        }
+
+        const updatedGeoJSON = updatedGraphic.geometry ? updatedGraphic.geometry.toJSON() : null;
+
+        if (updatedGeoJSON) {
+            // استدعاء الدالة لحفظ البيانات على الخادم
+            updateGraphicOnServer(itemId, updatedGeoJSON, updatedGraphic);
+        } else {
+            console.error('GeoJSON غير صالح أو غير متوفر.');
+        }
+    }
+
+    // إنشاء زر إظهار المعلومات
+    const showInfoButton = createButton("information", "Show Information", () => {
+        if (window.selectedGraphic) {
+            const attributes = window.selectedGraphic.attributes || {};
+            const media = attributes.media || [];
+            openViewItemModal(attributes.name, attributes.description, media);
+        } else {
+            alert('No selected graphic to show information.');
+        }
+    });
+    actionButtonsDiv.appendChild(showInfoButton);
+
+
+     // إنشاء زر الحفظ
+    const saveButton = createButton("save", "Save feature", () => {
+        if (window.selectedGraphic && window.selectedGraphic.attributes) {
+            const itemId = window.selectedGraphic.attributes.id;
+            saveItem(itemId);
+        } else {
+            alert("No selected graphic to save.");
+        }
+    });
+    actionButtonsDiv.appendChild(saveButton);
+
+    // إنشاء زر الحذف
+    const deleteButton = createButton("trash", "Delete feature", () => {
+        if (window.selectedGraphic && window.selectedGraphic.attributes) {
+            const itemId = window.selectedGraphic.attributes.id;
+            window.deleteItem(itemId);
+        } else {
+            alert('No selected graphic to delete.');
+        }
+    });
+    actionButtonsDiv.appendChild(deleteButton);
+
+    // إضافة الأزرار إلى واجهة المستخدم
+    view.ui.add(actionButtonsDiv, {
+        position: "top-left",
+        index: 1 // إضافة بعد أداة Sketch
+    });
+
+    // التحكم في إظهار وإخفاء الأزرار بناءً على تحديد العنصر
+    function updateButtonsVisibility() {
+        if (window.selectedGraphic) {
+            actionButtonsDiv.style.display = 'flex';
+        } else {
+            actionButtonsDiv.style.display = 'none';
+        }
+    }
+
+    // إخفاء الأزرار افتراضيًا في البداية
+    actionButtonsDiv.style.display = 'none';
+
+    // مراقبة التحديدات على الخريطة لتحديث عرض الأزرار
+    view.on("click", function(event) {
+        view.hitTest(event).then(function(response) {
+            const graphic = response.results.find(result => result.graphic.layer === graphicsLayer || result.graphic.layer === sketchLayer);
+
+            if (graphic) {
+                const clickedGraphic = graphic.graphic;
+                window.selectedGraphic = clickedGraphic; // تخزين العنصر المحدد في المتغير العالمي
+
+                // تحديث عرض الأزرار بعد التحديد
+                updateButtonsVisibility();
+
+            } else {
+                window.selectedGraphic = null; // إذا لم يتم تحديد عنصر، إفراغ المتغير
+                updateButtonsVisibility(); // تحديث عرض الأزرار لإخفائها
+            }
+        });
+    });
 
   
+
+
+    // Event listener for double-click to enable advanced editing of an existing graphic
+    view.on("double-click", function (event) {
+        event.stopPropagation(); // Prevent default double-click zoom behavior
+
+        view.hitTest(event).then(function (response) {
+            const graphic = response.results.find(result => result.graphic.layer === graphicsLayer || result.graphic.layer === sketchLayer);
+
+            if (graphic) {
+                const clickedGraphic = graphic.graphic;
+                if (clickedGraphic.layer === graphicsLayer) {
+                    // Move the graphic to the sketch layer to allow full editing capabilities
+                    const clonedGraphic = clickedGraphic.clone();
+                    graphicsLayer.remove(clickedGraphic); // Remove the graphic from the original layer
+                    sketchLayer.add(clonedGraphic); // Add the graphic to the sketch layer
+
+                    // Ensure the graphic has been added to the sketch layer before updating
+                    if (sketchLayer.graphics.includes(clonedGraphic)) {
+                        // Activate full editing mode for the graphic (reshape, move, add/remove parts)
+                        sketch.update({
+                            tool: "reshape", // Enable advanced editing with reshape tool
+                            graphics: [clonedGraphic],
+                            enableScaling: true,
+                            enableRotation: true,
+                            preserveAspectRatio: false, // Allow freeform reshaping
+                            toggleToolOnClick: false, // Keep tool active for continuous editing
+                            enableReshape: true, // Enable reshaping parts of geometry
+                            reshapeOptions: {
+                                reshapeHandle: "vertices", // Allow editing vertices (for polygons/lines)
+                                reshapeMode: "all" // Enable reshape for all parts (lines, polygons)
+                            }
+                        });
+                    }
+                } else if (clickedGraphic.layer === sketchLayer) {
+                    // If already in the sketch layer, directly activate the reshape tool to edit
+                    if (sketchLayer.graphics.includes(clickedGraphic)) {
+                        sketch.update({
+                            tool: "reshape",
+                            graphics: [clickedGraphic],
+                            enableScaling: true,
+                            enableRotation: true,
+                            preserveAspectRatio: false,
+                            toggleToolOnClick: false,
+                            enableReshape: true,
+                            reshapeOptions: {
+                                reshapeHandle: "vertices",
+                                reshapeMode: "all"
+                            }
+                        });
+                    }
+                }
+            }
+        });
+    });
+
+
       // Function to show the Create Item Modal
       window.openCreateItemModal = function(geojson) {
           // تحديث قيمة الحقل المخفي للـ GeoJSON
@@ -945,47 +902,37 @@
   });
   
   
-  // Function to show toast notifications
-  function showBootstrapToast(message, type) {
-      var toastHTML = `
-          <div class="toast fade show" role="alert" aria-live="assertive" aria-atomic="true">
-              <div class="toast-header">
-                  <img src="assets/images/logo-sm.png" alt="" height="20" class="me-1">
-                  <strong class="me-auto">Rizz</strong>
-                  <small>Just now</small>
-                  <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
-              </div>
-              <div class="toast-body">
-                  ${message}
-              </div>
-          </div>
-      `;
-      
-      var toastContainer = document.getElementById('toastPlacement');
-      if (!toastContainer) {
-          // Create toast container if it doesn't exist
-          toastContainer = document.createElement('div');
-          toastContainer.id = 'toastPlacement';
-          toastContainer.className = 'toast-container position-absolute p-3 top-0 end-0';
-          document.body.appendChild(toastContainer);
-      }
-      
-      // Append the new toast
-      toastContainer.insertAdjacentHTML('beforeend', toastHTML);
+    // Function to show toast notifications
+    function showBootstrapToast(message, type) {
+        const toastHTML = `
+            <div class="toast align-items-center border-0" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="true">
+                <div class="d-flex">
+                    <div class="toast-body d-flex align-items-center" style="background-color: ${type === 'success' ? '#24695c' : '#D32F2F'}; color: white; padding: 10px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">
+                        <i class="${type === 'success' ? 'bi bi-check-circle-fill' : 'bi bi-exclamation-circle-fill'} pe-2"></i>
+                        <span>${message}</span>
+                    </div>
+                    <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            </div>
 
-      // Initialize and show the toast
-      var toastElement = toastContainer.lastElementChild;
-      var bootstrapToast = new bootstrap.Toast(toastElement);
-      bootstrapToast.show();
+        `;
+        const toastContainer = document.getElementById('toastPlacement');
+        toastContainer.insertAdjacentHTML('beforeend', toastHTML);
 
-      // Automatically remove the toast after it's hidden
-      toastElement.addEventListener('hidden.bs.toast', function () {
-          toastElement.remove();
-      });
-  }
+        // Initialize and show the toast
+        const toastElement = toastContainer.querySelector('.toast:last-child');
+        const toastInstance = new bootstrap.Toast(toastElement);
+        toastInstance.show();
+
+        // Remove the toast from the DOM after it hides
+        toastElement.addEventListener('hidden.bs.toast', function () {
+            toastElement.remove();
+        });
+    }
+
 
   
-  function uploadChunkedFile(file, url, chunkSize = 5 * 1024 * 1024) {
+    function uploadChunkedFile(file, url, chunkSize = 5 * 1024 * 1024) {
       let start = 0;
       let chunkIndex = 0;
   
@@ -1263,17 +1210,18 @@
   
 
   // Function to show Bootstrap toasts
-  function showBootstrapToast(message, type) {
-      const toastHTML = `
-          <div class="toast align-items-center text-bg-${type} border-0" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="true">
-              <div class="d-flex">
-                  <div class="toast-body">
-                      ${message}
-                  </div>
-                  <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-              </div>
-          </div>
-      `;
+    function showBootstrapToast(message, type) {
+        const toastHTML = `
+        <div class="toast align-items-center text-bg-${type} border-0" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="true" style="z-index: 9999;">
+            <div class="d-flex">
+                <div class="toast-body">
+                    ${message}
+                </div>
+                <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+    `;
+
       const toastContainer = document.getElementById('toastPlacement');
       toastContainer.insertAdjacentHTML('beforeend', toastHTML);
 

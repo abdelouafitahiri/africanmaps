@@ -26,7 +26,13 @@ SECRET_KEY = '5&f+g839&^encn^exae*j$5%72f06wjv(3r(^ml$pp!kwnstlz'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['.onrender.com', 'localhost']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'urban-trout-wrgxvrvgvqrr299w6-8000.app.github.dev']
+
+CSRF_TRUSTED_ORIGINS = [
+    'https://localhost:8000',
+    'https://urban-trout-wrgxvrvgvqrr299w6-8000.app.github.dev',
+    'https://urban-trout-wrgxvrvgvqrr299w6-8000.app.github.dev',
+]
 
 # Application definition
 

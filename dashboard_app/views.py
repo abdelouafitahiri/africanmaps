@@ -64,6 +64,46 @@ def save_location_mobile(request):
         return redirect(reverse('map_mobile'))
 
 
+
+def locations_list_mobile(request):
+    month = request.GET.get('month')
+    year = request.GET.get('year')
+    archived = request.GET.get('archived')
+
+    locations = Location.objects.all().order_by('-created_at')
+
+    # Apply month and year filtering
+    if month and not year:
+        current_year = datetime.now().year
+        locations = locations.filter(created_at__year=current_year, created_at__month=month)
+    elif year:
+        locations = locations.filter(created_at__year=year)
+        if month:
+            locations = locations.filter(created_at__month=month)
+
+    # Apply archived filtering
+    if archived == 'archived':
+        locations = locations.filter(archived=True)
+    elif archived == 'non_archived':
+        locations = locations.filter(archived=False)
+
+    paginator = Paginator(locations, 9)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    months = [{'name': datetime(2000, i, 1).strftime('%B'), 'value': i} for i in range(1, 13)]
+    years = range(2020, datetime.now().year + 1)
+
+    context = {
+        'locations': page_obj,
+        'page_obj': page_obj,
+        'months': months,
+        'years': years,
+    }
+    return render(request, 'dashboard_app/mobile/locations_list.html', context)
+
+
+
 def location_detail_mobile(request, location_id):
     location = get_object_or_404(Location, pk=location_id)
 
@@ -174,7 +214,7 @@ def add_item_mobile(request, location_id):
     messages.warning(request, "Une erreur s'est produite lors de l'ajout de l'élément.")
     return redirect('location_detail_mobile', item.location.id)
 
-def update_location_mobile(request, item_id):
+def update_item_mobile(request, item_id):
     item = get_object_or_404(Item, id=item_id)
 
     if request.method == 'POST':
@@ -186,13 +226,13 @@ def update_location_mobile(request, item_id):
                 if geojson:
                     item.geojson = json.dumps(geojson)
                     item.save()
-                    return JsonResponse({'success': True, 'message': 'L\'élément a été mis à jour géographiquement avec succès!'})
+                    return JsonResponse({'success': True, 'message': "L'élément a été mis à jour géographiquement avec succès!"})
                 else:
                     return JsonResponse({'success': False, 'message': 'Veuillez vérifier que les données GeoJSON sont correctement entrées.'})
             except json.JSONDecodeError:
                 return JsonResponse({'success': False, 'message': 'Erreur dans les données JSON.'})
             except Exception as e:
-                return JsonResponse({'success': False, 'message': 'Une erreur inattendue s\'est produite: ' + str(e)})
+                return JsonResponse({'success': False, 'message': "Une erreur inattendue s'est produite: " + str(e)})
         else:
             # Traiter les données si la méthode est POST à partir d'un formulaire HTML (si vous utilisez un formulaire classique)
             name = request.POST.get('name')
@@ -201,7 +241,7 @@ def update_location_mobile(request, item_id):
     
             if not name or not description:
                 messages.warning(request, 'Veuillez vérifier que tous les champs sont correctement remplis.')
-                return redirect(reverse('location_detail_mobile', args=[item.location.id]))
+                return redirect(reverse('location-detail-mobile', args=[item.location.id]))
 
             # Mettre à jour les champs de base
             item.name = name
@@ -246,10 +286,9 @@ def update_location_mobile(request, item_id):
             # Notification de succès après le traitement
             messages.success(request, "L'élément et les médias ont été mis à jour avec succès!")
 
-            return redirect(reverse('location_detail_mobile', args=[item.location.id]))
+            return redirect(reverse('location-detail-mobile', args=[item.location.id]))
 
     return JsonResponse({'success': False, 'message': 'Requête non valide.'})
-
 
 
 

@@ -7,9 +7,10 @@ urlpatterns = [
     # MOBILE VERSION
     path('map_mobile/', views.map_mobile, name='map_mobile'),
     path('save_location_mobile/', views.save_location_mobile, name='save_location_mobile'),
+    path('locations_mobile/', views.locations_list_mobile, name='locations_list_mobile'),
     path('location_detail_mobile/<int:location_id>/', views.location_detail_mobile, name='location_detail_mobile'),
     path('item_mobile/<int:location_id>/add-item/', views.add_item_mobile, name='add_item_mobile'),
-    path('item_mobile/<int:location_id>/update/', views.update_location_mobile, name='update_location_mobile'),
+    path('item_mobile/<int:item_id>/update/', views.update_item_mobile, name='update_item_mobile'),
 
 
 
