@@ -7,44 +7,241 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, viewport-fit=cover" />
     <title>Ajouter un nouveau projet</title>
-    <link rel="stylesheet" type="text/css" href="{% static 'mobile/styles_mobile/bootstrap.css' %}">
     <link rel="stylesheet" type="text/css" href="{% static 'mobile/fonts/bootstrap-icons.css' %}">
+    <link href="{% static 'web/assets/css/bootstrap.min.css' %}" rel="stylesheet" type="text/css" />
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="{% static 'mobile/scripts_mobile/bootstrap.min.js' %}"></script>
+    <link href="{% static 'web/assets/css/app.min.css' %}" rel="stylesheet" type="text/css" />
+
     <script src="{% static 'mobile/scripts_mobile/custom.js' %}"></script>
+
+    <link href="{% static 'web/assets/libs/mobius1-selectr/selectr.min.css' %}" rel="stylesheet" type="text/css" />
+    <link href="{% static 'web/assets/css/icons.min.css' %}" rel="stylesheet" type="text/css" />
     <link href="{% static 'web/assets/css/esri_main.css' %}" rel="stylesheet" type="text/css" />
     <script src="https://js.arcgis.com/4.30/"></script>
 
+
+
 <style>
-        body, html {
-            margin: 0;
-            padding: 0;
-            height: 100%;
-            overflow: hidden;
-        }
 
-        #viewDiv {
-            position: absolute;
-            top: 0px;
-            bottom: 0px;
-            left: 0;
-            right: 0;
-            width: 100%;
-            z-index: 1;
-        }
-
-        #footer-bar {
-            z-index: 10;
-        }
-
-        .esri-basemap-gallery__item-container {
-            display: flex;
-            flex-wrap: nowrap;
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-        }
-
-
-    </style>
+  body, html {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      overflow: hidden;
+  }
+  
+  #viewDiv {
+      position: absolute;
+      top: 0px;
+      bottom: 0px;
+      left: 0;
+      right: 0;
+      width: 100%;
+      z-index: 1;
+  }
+  
+  #footer-bar {
+      z-index: 10;
+  }
+  
+  .esri-basemap-gallery__item-container {
+      display: flex;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+  }
+  .offline-message,.online-message {
+      position: fixed;
+      transform: translateY(300%);
+      padding-bottom: 0;
+      font-weight: 700;
+      font-family: "Varela Round",sans-serif;
+      transition: all 350ms ease;
+      bottom: 10px;
+      left: 10px;
+      right: 10px;
+      z-index: 95;
+      padding-left: 15px;
+      border-radius: 12px;
+      line-height: 50px
+  }
+  
+  .offline-message-active,.online-message-active {
+      transform: translateY(calc(-70px + (constant(safe-area-inset-bottom))));
+      transform: translateY(calc(-70px + (env(safe-area-inset-bottom))))
+  }
+  
+  #footer-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 98;
+      backdrop-filter: saturate(180%) blur(10px);
+      -webkit-backdrop-filter: saturate(180%) blur(10px);
+      background: rgba(255,255,255,1);
+      box-shadow: 0 -5px 5px 0 rgba(0,0,0,.04);
+      height: 65px;
+      display: flex;
+      text-align: center
+  }
+  
+  #footer-bar a:not(.btn) {
+      padding-top: 12px;
+      position: relative;
+      flex: 1 1 auto;
+      color: #1f1f1f
+  }
+  
+  #footer-bar a:not(.btn) span {
+      position: relative;
+      z-index: 2;
+      display: block;
+      font-size: 10px;
+      font-weight: 500;
+      margin-top: -3px;
+      opacity: .7;
+      font-family: "Varela Round",sans-serif!important
+  }
+  
+  #footer-bar a:not(.btn) i {
+      margin-top: 2px;
+      display: block;
+      font-size: 18px;
+      position: relative;
+      z-index: 2
+  }
+  
+  #footer-bar .badge {
+      height: 15px;
+      min-width: 15px;
+      line-height: 16px;
+      font-size: 8px;
+      font-style: normal;
+      border-radius: 15px;
+      text-align: center;
+      padding: 0;
+      position: absolute;
+      top: 8px;
+      margin-right: -5px;
+      z-index: 3
+  }
+  
+  #footer-bar .badge-text {
+      padding: 0 5px
+  }
+  
+  .footer-clear {
+      padding-bottom: calc(100px + env(safe-area-inset-bottom))!important
+  }
+  
+  .iosTabBar {
+      height: 65px!important;
+      transform: translateY(env(safe-area-inset-bottom))
+  }
+  
+  #footer-bar.position-relative {
+      z-index: 90!important
+  }
+  
+  .footer-bar-no-text i {
+      padding-top: 8px
+  }
+  
+  #footer-bar .circle-nav-1 * {
+      color: #fff!important
+  }
+  
+  #footer-bar .circle-nav-1::after {
+      position: absolute;
+      content: "";
+      width: 60px;
+      height: 60px;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%,-50%);
+      border-radius: 100%
+  }
+  
+  #footer-bar .circle-nav-2 i {
+      color: #fff!important;
+      transform: translateY(-18px);
+      font-size: 20px!important
+  }
+  
+  #footer-bar .circle-nav-2::after {
+      position: absolute;
+      content: "";
+      width: 50px;
+      height: 50px;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%,-50%);
+      margin-top: -25px;
+      border-radius: 10px;
+      z-index: -1
+  }
+  
+  #footer-bar .circle-nav-2::before {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 50px;
+      height: 50px;
+      margin-top: -25px;
+      margin-left: -5px;
+      border-radius: 20px;
+      background: inherit;
+      z-index: -1;
+      transform: scale(.75) translate(-55%,-45%);
+      filter: blur(8px)
+  }
+  
+  #footer-bar .btn {
+      margin: 0 10px;
+      margin-top: 15px;
+      font-size: 12px;
+      height: 35px;
+      line-height: 25px;
+      padding: 5px 15px
+  }
+  
+  .footer-bar-1 span {
+      transform: translateY(2px)
+  }
+  
+  .footer-bar-1 i {
+      transform: translateY(-2px)
+  }
+  
+  .footer-bar-1.footer-bar-no-text .circle-nav-1 i {
+      font-size: 20px!important;
+      transform: translateY(-2px)!important
+  }
+  
+  .footer-bar-3 .active-nav i,.footer-bar-3 .active-nav span {
+      transform: translateY(-3px)
+  }
+  
+  .footer-bar-4 .active-nav * {
+      color: #fff!important
+  }
+  
+  .footer-bar-detached {
+      border-radius: 15px;
+      left: 7px!important;
+      right: 7px!important;
+      bottom: 15px!important;
+      box-shadow: 0 0 15px 0 rgba(0,0,0,.1)!important
+  }
+  
+  #footer-bar:not(.iosTabBar) {
+      bottom: 15px!important
+  }
+</style>
+      
 </head>
 <body class="">
     
@@ -113,23 +310,19 @@
     <div id="page">
       <!-- القائمة السفلية -->
       <div id="footer-bar" class="footer-bar-1 footer-bar-detached">
-          <!-- Projets Dropdown -->
-          <a href="/map_mobile/" id="dropdownProjets" data-bs-toggle="dropdown" aria-expanded="false">
-              <i class="bi bi-pin-map"></i><span>Ajouter un Projet</span>
-          </a>
-          
-      
-          
-      
-      
-          <!-- Other Links -->
-          <a href="/locations_mobile/"><i class="bi bi-map"></i><span>Gérer les Projets</span></a>
-          <a href="/map_mobile/" class="circle-nav-2">
-              <img src="/static/web/assets/images/logo-sm.png" alt="Logo" style="width: 51px;height: 51px;margin-right: 0px;border-radius: 10px;margin-top: -35px;box-shadow: -1px -1px 4px #46444452;">
-              <span>AfricanMaps</span>
-          </a>
-          <a href="page-payments.html"><i class="bi bi-receipt"></i><span>Gérer les Médias</span></a>
-          <a href="#" data-bs-toggle="offcanvas" data-bs-target="#menu-sidebar"><i class="bi bi-three-dots"></i><span>Plus</span></a>
+        <!-- Projets Dropdown -->
+        <a href="/map_mobile/">
+            <i class="bi bi-pin-map"></i><span>Ajouter un Projet</span>
+        </a>
+        
+    
+        <!-- Other Links -->
+        <a href="#" data-bs-toggle="offcanvas" data-bs-target="#menu-sidebar" class="circle-nav-2">
+            <img src="/static/web/assets/images/logo-sm.png" alt="Logo" style="width: 51px;height: 51px;margin-right: 0px;border-radius: 10px;margin-top: -35px;box-shadow: -1px -1px 4px #46444452;">
+            <span>AfricanMaps</span>
+        </a>
+        <a href="/locations_mobile/"><i class="bi bi-map"></i><span>Gérer les Projets</span></a>
+
       </div>
 
       <div id="viewDiv"></div>
