@@ -5741,7 +5741,7 @@ textarea.form-control-lg {
     color: #000;
     border: 1px solid #ddd;
     background-color: #f8f9fa;
-    );font-size: var(--bs-pagination-font-size);
+    font-size: var(--bs-pagination-font-size);
     color: var(--bs-pagination-color);
     background-color: var(--bs-pagination-bg);
     border: var(--bs-pagination-border-width) solid var(--bs-pagination-border-color);
@@ -5802,12 +5802,12 @@ textarea.form-control-lg {
     line-height: 40px;
     text-align: center;
     margin: 0 5px;
-    );border-bottom-left-radius: var(--bs-pagination-border-radius)
+    border-bottom-left-radius: var(--bs-pagination-border-radius)
 }
 
 .page-item:last-child .page-link {
     border-radius: 50%;
-    );border-bottom-right-radius: var(--bs-pagination-border-radius)
+    border-bottom-right-radius: var(--bs-pagination-border-radius)
 }
 
 .pagination-lg {
