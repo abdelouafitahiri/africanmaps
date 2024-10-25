@@ -18,6 +18,8 @@ DEBUG = env.bool('DEBUG', default=False)
 # Load allowed hosts from .env file
 ALLOWED_HOSTS = ['*']
 
+CSRFCSRF_TRUSTED_ORIGINS = ['https://africanmaps-7yxuy.ondigitalocean.app']
+
 # Installed apps and middleware configuration remain the same
 INSTALLED_APPS = [
     'django.contrib.admin',
