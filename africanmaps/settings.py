@@ -18,10 +18,6 @@ DEBUG = env.bool('DEBUG', default=False)
 # Load allowed hosts from .env file
 ALLOWED_HOSTS = ['*']
 
-CSRF_TRUSTED_ORIGINS  = [
-    'https://localhost:8000',
-    'https://gruesome-spooky-mausoleum-97jw676j6g55fx9w4-8000.app.github.dev'
-]
 # Installed apps and middleware configuration remain the same
 INSTALLED_APPS = [
     'django.contrib.admin',
