@@ -12,6 +12,9 @@ urlpatterns = [
     path('item_mobile/<int:location_id>/add-item/', views.add_item_mobile, name='add_item_mobile'),
     path('item_mobile/<int:item_id>/update/', views.update_item_mobile, name='update_item_mobile'),
 
+    path('media_mobile/<int:media_id>/delete/', views.delete_media, name='delete_media_mobile'),
+    path('media_mobile/<int:media_id>/update/', views.update_media, name='update_media_mobile'),
+
 
 
     # WEB VERSION
@@ -52,6 +55,7 @@ urlpatterns = [
     path('upload/<int:location_id>/', views.upload_kml_kmz, name='upload_kml_kmz'),
     path('import/kml-kmz/', views.import_kml_kmz, name='import_kml_kmz'),
     path('exporter/kml-kmz/', views.export_kml_kmz, name='export_kml_kmz'),
+
 
     path('location/<int:location_id>/generate-kml/', views.generate_location_kml, name='generate-location-kml'),
     path('location/<int:location_id>/generate-kmz/', views.generate_location_kmz, name='generate-location-kmz'),

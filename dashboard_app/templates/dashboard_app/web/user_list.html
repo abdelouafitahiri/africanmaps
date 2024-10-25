@@ -60,7 +60,7 @@
                                 {% for user in users %}
                                 <tr>
                                     <td class="d-flex align-items-center">
-                                        <img src="{% static 'assets/icons/icon_user.svg' %}" class="me-2 thumb-md align-self-center rounded" style="width: 50px;" alt="User Icon">
+                                        <img src="{% static 'web/assets/icons/icon_user.svg' %}" class="me-2 thumb-md align-self-center rounded" style="width: 50px;" alt="User Icon">
                                     </td>
                                     <td>{{ user.get_full_name }}</td>
                                     <td><a href="mailto:{{ user.email }}">{{ user.email }}</a></td>

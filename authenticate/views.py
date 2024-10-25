@@ -3,6 +3,32 @@ from django.contrib.auth import authenticate, login, logout, update_session_auth
 from django.contrib import messages
 from django.contrib.auth.models import User
 
+# Mobile 
+
+def login_mobile(request):
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+
+        user = authenticate(request, username=username, password=password)
+        if user is not None:
+            login(request, user)
+            messages.success(request, 'Vous avez été connecté avec succès')
+            return redirect('map_mobile')
+        else:
+            messages.warning(request, "Le nom d'utilisateur ou le mot de passe est incorrect !!")
+            return redirect('login')
+    return render(request, 'authenticate/login.html')
+
+
+def logout_mobile(request):
+    logout(request)
+    messages.success(request, "Déconnexion réussie")
+    return redirect('login_mobile')
+
+
+# Web
+
 def home(request):
     return render(request, 'authenticate/home.html')
 
@@ -23,7 +49,7 @@ def login_user(request):
 
 def logout_user(request):
     logout(request)
-    messages.success(request, "Logged out successfully")
+    messages.success(request, "Déconnexion réussie")
     return redirect('home')
 
 def register_user(request):
@@ -34,7 +60,7 @@ def register_user(request):
         email = request.POST['email']
         password1 = request.POST['password1']
         password2 = request.POST['password2']
-        user_type = request.POST['user_type']  # تحديد نوع المستخدم
+        user_type = request.POST['user_type']
 
         if password1 == password2:
             if User.objects.filter(username=username).exists():

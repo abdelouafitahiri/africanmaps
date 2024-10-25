@@ -106,7 +106,7 @@
                         <form method="get" action="{% url 'generate-location-kml' location.id %}">
                             {% csrf_token %}
                             <button type="submit" name="export_format" value="kml" class="btn rounded-pill btn-outline-primary w-100 mb-2 d-flex align-items-center justify-content-center">
-                                <img src="{% static 'assets/icons/kml.png' %}" alt="KML Icon" style="width: 30px; height: 30px; margin-right: 8px;">
+                                <img src="{% static 'web/assets/icons/kml.png' %}" alt="KML Icon" style="width: 30px; height: 30px; margin-right: 8px;">
                                 Exporter en KML
                             </button>
                         </form>                            
@@ -115,7 +115,7 @@
                         <form method="get" action="{% url 'generate-location-kmz' location.id %}">
                             {% csrf_token %}
                             <button type="submit" name="export_format" value="kmz" class="btn rounded-pill btn-outline-secondary w-100 mb-2 d-flex align-items-center justify-content-center">
-                                <img src="{% static 'assets/icons/kmz.png' %}" alt="KMZ Icon" style="width: 30px; height: 30px; margin-right: 8px;">
+                                <img src="{% static 'web/assets/icons/kmz.png' %}" alt="KMZ Icon" style="width: 30px; height: 30px; margin-right: 8px;">
                                 Exporter en KMZ
                             </button>
                         </form>
