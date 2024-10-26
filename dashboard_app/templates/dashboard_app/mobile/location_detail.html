@@ -3,9 +3,7 @@
 <html lang="en">
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, viewport-fit=cover" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     <title>Détails du projet</title>
     <link rel="stylesheet" type="text/css" href="{% static 'mobile/fonts/bootstrap-icons.css' %}">
     <link href="{% static 'web/assets/css/bootstrap.min.css' %}" rel="stylesheet" type="text/css" />
@@ -48,26 +46,6 @@
         flex-wrap: nowrap;
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
-    }
-    .offline-message,.online-message {
-        position: fixed;
-        transform: translateY(300%);
-        padding-bottom: 0;
-        font-weight: 700;
-        font-family: "Varela Round",sans-serif;
-        transition: all 350ms ease;
-        bottom: 10px;
-        left: 10px;
-        right: 10px;
-        z-index: 95;
-        padding-left: 15px;
-        border-radius: 12px;
-        line-height: 50px
-    }
-
-    .offline-message-active,.online-message-active {
-        transform: translateY(calc(-70px + (constant(safe-area-inset-bottom))));
-        transform: translateY(calc(-70px + (env(safe-area-inset-bottom))))
     }
 
     #footer-bar {
@@ -239,27 +217,28 @@
         bottom: 15px!important
     }
 
+    
+    
+
+    .image-item img, .image-item video {
+    max-width: 100%; /* اجعل العرض يتناسب مع حجم الحاوية */
+    height: auto;    /* حافظ على نسبة العرض إلى الارتفاع */
+    border-radius: 5px; /* إضافة زوايا مستديرة */
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); /* إضافة تأثير ظل */
+    margin-bottom: 10px; /* مسافة بين الصورة والزر */
+    }
+
     .image-gallery {
         display: flex;
         flex-wrap: wrap;
-        gap: 10px; /* إضافة مسافة بين العناصر */
+        gap: 10px;
+        margin-bottom: 40px;
     }
 
     .image-item {
-        flex: 1 1 calc(50% - 10px); /* كل عنصر يأخذ نصف العرض مع مسافة صغيرة */
-        box-sizing: border-box;
+        flex-basis: calc(20% - 50px);
     }
 
-    .image-item img, .image-item video {
-        width: 100%; /* اجعل العرض 100% داخل العنصر */
-        height: auto; /* الحفاظ على نسبة العرض إلى الارتفاع */
-        border-radius: 5px; /* إضافة زوايا مدورة */
-        box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); /* ظل خفيف أسفل الصور والفيديوهات */
-    }
-
-    .btn-danger {
-        margin-top: 10px; /* مسافة بسيطة بين الصورة والزر */
-    }
 
 </style>
       
@@ -285,7 +264,6 @@
                 align-self-center mb-0 text-white"></i>
         </div>
         {{ message|safe }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
     {% endfor %}
   {% endif %}
@@ -313,7 +291,7 @@
                   <h5 class="modal-title" id="CreateItemModalLabel">Créer un élément</h5>
                   <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
               </div>
-              <form method="POST" action="{% url 'add_item_mobile' location.id %}" enctype="multipart/form-data">
+              <form method="POST" action="{% url 'add_item_mobile' location.id %}" enctype="multipart/form-data" style="background-color: #fff;">
               <div class="modal-body">
                       {% csrf_token %}
                       <div class="form-group mb-3">
@@ -370,9 +348,8 @@
                   </div>
               </div>
               <div class="modal-footer">
-                  <button type="button" id="editButton" class="btn btn-primary btn-sm d-none">Modifier</button>
-                  <button type="button" class="btn btn-danger btn-sm d-none" id="deleteButton" >Supprimer</button>
-                  <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Fermer</button>
+                <button type="button" id="editButton" class="btn btn-primary btn-sm">Modifier</button>
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Fermer</button>
               </div>
           </div>
       </div>
@@ -380,7 +357,8 @@
 
   <!-- Modal pour modifier un élément -->
   <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
-      <div class="modal-dialog modal-fullscreen-lg-down">
+
+    <div class="modal-dialog modal-fullscreen-lg-down">
           <div class="modal-content">
               <div class="modal-header">
                   <h5 class="modal-title" id="editModalLabel">Modifier l'élément</h5>
@@ -417,6 +395,7 @@
   </div>
 
 
+  <div class="toast-container position-absolute p-3 start-50 translate-middle" style="top: 70%;" id="toastPlacement"></div>
 
 
   <div id="page">
@@ -538,11 +517,11 @@
             container: "viewDiv",
             map: map,
             center: [-6.8498, 34.0209],
-            zoom: 15,
-            ui: { components: ["zoom"] }
+            zoom: 18,
+            ui: {
+                components: ["zoom"]
+            }
         });
-    
-        // Load GeoJSON data from Django template
   
         // Load GeoJSON data from Django template
         const locationGeoJSON = JSON.parse(`{{ location_geojson|escapejs }}`);
@@ -617,7 +596,7 @@
                         const targetGeometry = graphicGeometry.extent ? graphicGeometry.extent.expand(1.5) : graphicGeometry;
                         view.goTo({
                             target: targetGeometry,
-                            zoom: 14
+                            zoom: 18
                         }, {
                             animate: !!graphicGeometry.extent
                         }).catch((error) => {
@@ -681,8 +660,8 @@
                 width: 2,
                 style: "solid"  // Make sure the line style is solid, no dashed line
             },
-  
         });
+
         
         const sketch = new Sketch({
             view: view,
@@ -718,9 +697,9 @@
         });
         
   
-    // تفعيل عرض التولتيب بشكل افتراضي
-    sketch.tooltipOptions.enabled = true;
-        
+        // تفعيل عرض التولتيب بشكل افتراضي
+        sketch.tooltipOptions.enabled = true;
+            
         // إضافة حدث لإنشاء العنصر إلى أداة الـ Sketch
         sketch.on("create", event => {
             if (event.state === "complete") {
@@ -811,22 +790,25 @@
         view.ui.move("zoom", "top-right");
     
   
+
         
+
         const sketchExpand = new Expand({
-          view: view,
-          content: sketch,
-          expandIconClass: "esri-icon-sketch",
-          expandTooltip: "Click to draw",
-          expanded: false, 
-          mode: "floating"
+            view: view,
+            content: sketch,
+            expandIconClass: "analysis-overlay",
+            expandTooltip: "Click to draw",
+            expanded: false,
+            mode: "floating"
         });
-      
-        // إضافة عنصر Expand الخاص بـ Sketch إلى واجهة المستخدم
+
         view.ui.add(sketchExpand, {
             position: "top-left",
-            index: 1 
+            index: 1
         });
-        
+
+
+
       
         // إضافة عنصر Expand إلى واجهة المستخدم في الموضع المطلوب
         view.ui.add(basemapExpand, {
@@ -910,6 +892,23 @@
       });
       actionButtonsDiv.appendChild(showInfoButton);
   
+
+        // إنشاء زر التعديل أسفل زر الحفظ
+        const editButton = createButton("save-as", "Edit feature", () => {
+            if (window.selectedGraphic && window.selectedGraphic.attributes) {
+                const attributes = window.selectedGraphic.attributes || {};
+                const id = attributes.id;
+                handleEditButtonClick(id, attributes.name, attributes.description);
+            } else {
+                alert('No selected graphic to edit.');
+            }
+        });
+        actionButtonsDiv.appendChild(editButton);
+
+        // تعريف دالة handleEditButtonClick لاستدعاء openEditModal
+        function handleEditButtonClick(id, name, description) {
+            openEditModal(id, name, description, JSON.stringify(window.selectedGraphic.geometry.toJSON()));
+        }
   
        // إنشاء زر الحفظ
       const saveButton = createButton("save", "Save feature", () => {
@@ -922,6 +921,8 @@
       });
       actionButtonsDiv.appendChild(saveButton);
   
+       
+
       // إنشاء زر الحذف
       const deleteButton = createButton("trash", "Delete feature", () => {
           if (window.selectedGraphic && window.selectedGraphic.attributes) {
@@ -1200,7 +1201,7 @@
   
   
     
-      function uploadChunkedFile(file, url, chunkSize = 5 * 1024 * 1024) {
+    function uploadChunkedFile(file, url, chunkSize = 5 * 1024 * 1024) {
         let start = 0;
         let chunkIndex = 0;
     
@@ -1301,68 +1302,50 @@
     
     
     // Fonction pour ajouter une image à la galerie et à l'input
+    
     function addImageToGallery(imageDataUrl) {
         const gallery = document.querySelector(".image-gallery");
         const div = document.createElement("div");
-        div.className = "image-item";  // سيتم التحكم بالحجم من خلال CSS
+        div.className = "image-item";
 
         const img = document.createElement("img");
         img.src = imageDataUrl;
-
-        const fileName = `{{ location.name }}-image-${imageCount}.png`;  // استخدم اسم الـ location مع تسلسل رقمي
-        imageCount++;  // زيادة العدد لتسلسل الصور
 
         const removeBtn = document.createElement("button");
         removeBtn.className = "btn btn-danger btn-sm";
         removeBtn.innerText = "Supprimer";
         removeBtn.onclick = function () {
-            div.remove();  // Supprimer de la galerie
-            removeFileFromInput(fileName);  // Supprimer de l'input
+            div.remove();
+            removeFileFromInput(fileName);
         };
 
         div.appendChild(img);
         div.appendChild(removeBtn);
         gallery.appendChild(div);
-
-        // Convertir l'URL de données de l'image en fichier et l'ajouter à l'input
-        const imageFile = dataURLtoFile(imageDataUrl, fileName, "image/png");
-        addMediaToInput(imageFile);
     }
 
-    // Fonction pour ajouter une vidéo à la galerie et à l'input
+    // نفس الفكرة للفيديوهات
     function addVideoToGallery(videoUrl) {
         const gallery = document.querySelector(".image-gallery");
         const div = document.createElement("div");
-        div.className = "image-item";  // سيتم التحكم بالحجم من خلال CSS
+        div.className = "image-item";
 
         const videoElement = document.createElement("video");
         videoElement.controls = true;
         videoElement.src = videoUrl;
 
-        const fileName = `{{ location.name }}-video-${videoCount}.mp4`;  // استخدم اسم الـ location مع تسلسل رقمي
-        videoCount++;  // زيادة العدد لتسلسل الفيديوهات
-
         const removeBtn = document.createElement("button");
         removeBtn.className = "btn btn-danger btn-sm";
         removeBtn.innerText = "Supprimer";
         removeBtn.onclick = function () {
-            div.remove();  // Supprimer de la galerie
-            removeFileFromInput(fileName);  // Supprimer de l'input
+            div.remove();
+            removeFileFromInput(fileName);
         };
 
         div.appendChild(videoElement);
         div.appendChild(removeBtn);
         gallery.appendChild(div);
-
-        // Convertir l'URL de la vidéo en Blob puis en fichier, et l'ajouter à l'input
-        fetch(videoUrl)
-            .then(res => res.blob())
-            .then(blob => {
-                const videoFile = new File([blob], fileName, { type: "video/mp4" });
-                addMediaToInput(videoFile);
-            });
     }
-
     // Fonction pour ouvrir la caméra pour capturer des images ou enregistrer des vidéos
     function openCamera() {
         const modal = document.createElement("div");
@@ -1415,7 +1398,9 @@
         let recordedChunks = [];
     
         // Accéder à la caméra arrière
-        navigator.mediaDevices.getUserMedia({ video: { facingMode: { exact: "environment" } } })
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: { exact: "user" } } })
+
+//        navigator.mediaDevices.getUserMedia({ video: { facingMode: { exact: "environment" } } })
             .then(function (stream) {
                 video.srcObject = stream;
     
@@ -1482,7 +1467,6 @@
                   <div class="toast-body">
                       ${message}
                   </div>
-                  <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
               </div>
           </div>
       `;

@@ -18,7 +18,11 @@ DEBUG = env.bool('DEBUG', default=False)
 # Load allowed hosts from .env file
 ALLOWED_HOSTS = ['*']
 
-CSRFCSRF_TRUSTED_ORIGINS = ['https://africanmaps-7yxuy.ondigitalocean.app']
+CSRF_TRUSTED_ORIGINS = [
+    'https://gruesome-spooky-mausoleum-97jw676j6g55fx9w4-8000.app.github.dev',
+    'https://africanmaps-7yxuy.ondigitalocean.app',
+    'https://localhost:8000'  # Add localhost
+]
 
 # Installed apps and middleware configuration remain the same
 INSTALLED_APPS = [

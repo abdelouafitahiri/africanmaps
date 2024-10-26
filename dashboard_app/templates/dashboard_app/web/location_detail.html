@@ -512,7 +512,7 @@
             container: "viewDiv",
             map: map,
             center: [-6.8498, 34.0209],
-            zoom: 15,
+            zoom: 18,
             ui: { components: ["zoom"] }
         });
     
@@ -591,7 +591,7 @@
                         const targetGeometry = graphicGeometry.extent ? graphicGeometry.extent.expand(1.5) : graphicGeometry;
                         view.goTo({
                             target: targetGeometry,
-                            zoom: 14
+                            zoom: 18
                         }, {
                             animate: !!graphicGeometry.extent
                         }).catch((error) => {
@@ -692,8 +692,8 @@
         });
         
 
-    // تفعيل عرض التولتيب بشكل افتراضي
-    sketch.tooltipOptions.enabled = true;
+        // تفعيل عرض التولتيب بشكل افتراضي
+        sketch.tooltipOptions.enabled = true;
         
         // إضافة حدث لإنشاء العنصر إلى أداة الـ Sketch
         sketch.on("create", event => {
