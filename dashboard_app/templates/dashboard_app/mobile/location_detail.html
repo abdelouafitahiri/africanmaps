@@ -48,6 +48,13 @@
         -webkit-overflow-scrolling: touch;
     }
 
+    .esri-sketch__section esri-sketch__info-section esri-sketch__info-count-section{
+        display: none;
+    }
+    .esri-sketch__section esri-sketch__section esri-sketch__info-section{
+        display: none;
+    }
+
     #footer-bar {
         position: fixed;
         bottom: 0;
@@ -285,40 +292,41 @@
   
     <!-- Modal pour ajouter un nouvel élément avec la capture de caméra -->
     <div class="modal fade" id="CreateItemModal" tabindex="-1" aria-labelledby="CreateItemModalLabel" aria-hidden="true">
-      <div class="modal-dialog modal-fullscreen-lg-down">
-          <div class="modal-content">
-              <div class="modal-header">
-                  <h5 class="modal-title" id="CreateItemModalLabel">Créer un élément</h5>
-                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
-              </div>
-              <form method="POST" action="{% url 'add_item_mobile' location.id %}" enctype="multipart/form-data" style="background-color: #fff;">
-              <div class="modal-body">
-                      {% csrf_token %}
-                      <div class="form-group mb-3">
-                          <label for="itemName">Nom</label>
-                          <input type="text" class="form-control" id="itemName" name="name" placeholder="Nom" required />
-                      </div>
-                      <div class="form-group mb-3">
-                          <label for="itemDescription">Description</label>
-                          <textarea class="form-control" id="itemDescription" name="description" placeholder="Description" required></textarea>
-                      </div>
-                      <div class="form-group mb-3">
-                          <div class="image-gallery" name="images"></div>
-                          <button type="button" class="take-video-btn btn btn-warning mb-2">
-                              <i class="fas fa-camera"></i> Capturer une image/vidéo
-                          </button>
-                          <input type="file" class="btn btn-outline-secondary form-control" name="media" id="imageInput" multiple accept="image/*,video/*" />
-                      </div>
-                      <input type="hidden" name="geojson" id="geojsonInput" />
-              </div>
-              <div class="modal-footer">
-                  <button type="submit" class="btn btn-primary">Enregistrer</button>
-                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
-              </div>
-          </form>
-          </div>
-      </div>
-  </div>
+        <div class="modal-dialog modal-fullscreen-lg-down">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="CreateItemModalLabel">Créer un élément</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+                </div>
+                <form method="POST" action="{% url 'add_item_mobile' location.id %}" enctype="multipart/form-data" style="background-color: #fff;">
+                    <div class="modal-body">
+                        {% csrf_token %}
+                        <div class="form-group mb-3">
+                            <label for="itemName">Nom</label>
+                            <input type="text" class="form-control" id="itemName" name="name" placeholder="Nom" required />
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="itemDescription">Description</label>
+                            <textarea class="form-control" id="itemDescription" name="description" placeholder="Description" required></textarea>
+                        </div>
+                        <div class="form-group mb-3">
+                            <div class="image-gallery" name="images"></div>
+                            <button type="button" class="take-video-btn btn btn-warning mb-2">
+                                <i class="fas fa-camera"></i> Capturer une image/vidéo
+                            </button>
+                            <input type="file" class="btn btn-outline-secondary form-control" name="media" id="imageInput" multiple accept="image/*,video/*" />
+                        </div>
+                        <input type="hidden" name="geojson" id="geojsonInput" />
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary">Enregistrer</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
 
   <!-- Modal pour afficher les détails d'un élément -->
   <div class="modal fade" id="viewItemModal" tabindex="-1" aria-labelledby="viewItemModalLabel" aria-hidden="true">
@@ -618,48 +626,39 @@
   
         const snappingLayer = graphicsLayer;
   
+        
         const sketchViewModel = new SketchViewModel({
             view: view,
             layer: graphicsLayer,
             snappingOptions: {
-                enabled: true,
-                featureEnabled: true,
-                selfEnabled: true,
-                featureSources: [{ layer: graphicsLayer }]
+            enabled: true,
+            featureEnabled: true,
+            selfEnabled: true,
+            featureSources: [{ layer: graphicsLayer }]
             },
-            // تخصيص الألوان للبوليغون
             polygonSymbol: {
-                type: "simple-fill", 
-                color: [19,23,44, 0.5],
-                outline: {
+            type: "simple-fill",
+            color: [19, 23, 44, 0.5],
+            outline: {
                 color: [255, 165, 0],
-                width: 2,
+                width: 2
             }
             },
-            // تخصيص الألوان للخطوط
             polylineSymbol: {
-                type: "simple-line",
-                color: [255, 165, 0],
-                width: 2,
+            type: "simple-line",
+            color: [255, 165, 0],
+            width: 2
             },
-            // تخصيص الألوان للنقاط
             pointSymbol: {
-                type: "simple-marker",
-                style: "circle",
-                color: [19,23,44, 0.95],
-                size: "13px",
-                outline: {
-                  color: [255, 165, 0],
-                  width: 2
-                }
-            },
-                    
-            activeLineSymbol: {
-                type: "simple-line", // Active drawing symbol
-                color: [19,23,44],  // Green color for the polyline during active drawing
-                width: 2,
-                style: "solid"  // Make sure the line style is solid, no dashed line
-            },
+            type: "simple-marker",
+            style: "circle",
+            color: [19, 23, 44, 0.95],
+            size: "13px",
+            outline: {
+                color: [255, 165, 0],
+                width: 2
+            }
+            }
         });
 
         
@@ -668,46 +667,70 @@
             layer: graphicsLayer,
             viewModel: sketchViewModel,
             layout: "vertical",
-        
             snappingOptions: {
-                enabled: true, // تفعيل الـ snapping
+                enabled: true,
                 featureEnabled: true,
                 selfEnabled: true,
                 featureSources: [
                     { layer: graphicsLayer, enabled: true, title: "Existing Features Layer" },
-                    { layer: sketchLayer, enabled: true, title: "New Features Layer" }  // تأكد من وجود هذه الطبقة
+                    { layer: sketchLayer, enabled: true, title: "New Features Layer" }
                 ]
             },
-            defaultUpdateOptions: {
-                tool: "reshape",  // تفعيل أداة reshape
-                enableRotation: true,
-                enableScaling: true,
-                multipleSelectionEnabled: true,
-                preserveAspectRatio: false,
-                reshapeOptions: {
-                    reshapeHandle: "vertices",
-                    reshapeMode: "all"  // تعديل كافة الأجزاء
-                }
-            },
-            defaultCreateOptions: {
-                tool: "polyline",
-                enableGuide: true,
-                tooltipOptions: { enabled: true }
-            },
+            visibleElements: {
+                undoRedoMenu: false,
+                settingsMenu: true,
+                featureCount: false,
+                duplicateFeature: false,
+                deleteFeature: false
+            }
         });
-        
-  
+
         // تفعيل عرض التولتيب بشكل افتراضي
         sketch.tooltipOptions.enabled = true;
             
+        
+        // إنشاء زر Undo
+        const undoButton = document.createElement("div");
+        undoButton.className = "esri-widget--button esri-interactive";
+        undoButton.title = "Undo";
+        undoButton.innerHTML = '<span class="esri-icon-undo"></span>';
+        undoButton.onclick = () => {
+            sketchViewModel.undo();
+        };
+
+        // إنشاء زر Redo
+        const redoButton = document.createElement("div");
+        redoButton.className = "esri-widget--button esri-interactive";
+        redoButton.title = "Redo";
+        redoButton.innerHTML = '<span class="esri-icon-redo"></span>';
+        redoButton.onclick = () => {
+            sketchViewModel.redo();
+        };
+
+        undoButton.style.visibility = "hidden";
+        redoButton.style.visibility = "hidden";
+
+        function showUndoRedoButtons() {
+            undoButton.style.visibility = "visible";
+            redoButton.style.visibility = "visible";
+        }
+
+        function hideUndoRedoButtons() {
+            undoButton.style.visibility = "hidden";
+            redoButton.style.visibility = "hidden";
+        }
+
         // إضافة حدث لإنشاء العنصر إلى أداة الـ Sketch
         sketch.on("create", event => {
-            if (event.state === "complete") {
+            if (event.state === "start") {
+                showUndoRedoButtons(); // إظهار الأزرار عند بدء الرسم
+            } else if (event.state === "complete") {
                 activeGraphic = event.graphic; // تخزين العنصر المرسوم كعنصر نشط
                 openCreateItemModal(event.graphic.toJSON()); // فتح نافذة لإضافة التفاصيل بعد الانتهاء من الرسم
+                hideUndoRedoButtons(); // إخفاء الأزرار عند اكتمال الرسم
             }
         });
-    
+
         
         function updateGraphicOnServer(itemId, geojsonData, updatedGraphic) {
             // بناء كائن GeoJSON كامل
@@ -772,7 +795,7 @@
             mode: "floating"
         });
     
-        
+
         const basemapGallery = new BasemapGallery({
             view: view
         });
@@ -806,6 +829,11 @@
             position: "top-left",
             index: 1
         });
+
+
+        // إضافة الأزرار إلى واجهة المستخدم
+        view.ui.add(undoButton, "top-left");
+        view.ui.add(redoButton, "top-left");
 
 
 
@@ -1027,33 +1055,42 @@
               }
           });
       });
-  
-  
-        // Function to show the Create Item Modal
+
+        // Récupérer la valeur de itemCounter depuis le localStorage, ou initialiser à 1
+        let itemCounter = parseInt(localStorage.getItem("itemCounter")) || 1;
+
+        // Fonction pour afficher le modal avec la numérotation automatique
         window.openCreateItemModal = function(geojson) {
-            // تحديث قيمة الحقل المخفي للـ GeoJSON
             document.getElementById('geojsonInput').value = JSON.stringify(geojson);
             
-            // استخدام Bootstrap لإظهار المودال
-            $('#CreateItemModal').modal('show'); // إظهار المودال باستخدام Bootstrap's JavaScript API
+            // Définir la valeur par défaut du champ "Nom" comme "Élément X" où X est le numéro actuel
+            document.getElementById('itemName').value = `Élément ${itemCounter}`;
+            
+            // Afficher le modal avec l'API de Bootstrap
+            $('#CreateItemModal').modal('show');
         };
-    
-        // Function to close the Create Item Modal using Bootstrap's modal API
+
+        // Fonction pour fermer le modal
         window.closeCreateItemModal = function() {
-            $('#CreateItemModal').modal('hide'); // Hide the modal using Bootstrap's API
+            $('#CreateItemModal').modal('hide');
         };
-    
-        // Event listener to handle the removal of the active graphic when the modal is fully hidden
+
+        // Écouteur d'événement pour réinitialiser le graphique actif lorsque le modal est complètement masqué
         $('#CreateItemModal').on('hidden.bs.modal', function () {
-            // Remove the active graphic from the graphics layer if it exists
             if (activeGraphic && graphicsLayer) {
                 graphicsLayer.remove(activeGraphic);
-                activeGraphic = null; // Reset the activeGraphic variable after removal
+                activeGraphic = null;
             }
         });
-    
-    
-    
+
+        // Écouteur d'événement pour l'envoi du formulaire, incrémente le compteur seulement lors de l'enregistrement
+        document.getElementById('CreateItemModal').querySelector('form').addEventListener('submit', function(event) {
+            // Incrémente le compteur et met à jour le localStorage
+            itemCounter++;
+            localStorage.setItem("itemCounter", itemCounter);
+        });
+
+
         window.openViewItemModal = function(name, description, media) {
             // تحديث اسم المكان والوصف في الـ modal
             document.getElementById('viewItemName').value = name || "Pas de nom";

@@ -12480,7 +12480,7 @@ textarea.esri-feature-form__input {
 
 .esri-sketch--vertical .esri-sketch__panel {
     flex-flow: column;
-    justify-content: flex-start
+    justify-content: flex-start;
 }
 
 .esri-sketch--vertical .esri-sketch__section {
@@ -12501,16 +12501,14 @@ textarea.esri-feature-form__input {
 
 .esri-sketch--vertical .esri-sketch__info-panel {
     width: max-content;
-    max-width: 350px
+    max-width: 350px;
 }
 
 .esri-sketch--vertical .esri-sketch__info-panel:empty {
     padding: 0
 }
 
-.esri-sketch--vertical .esri-sketch__info-section {
-    width: 32px;
-}
+.esri-sketch--vertical .esri-sketch__info-section {display: none;}
 
 .esri-sketch--vertical .esri-selection-toolbar__container {
     flex-direction: column
