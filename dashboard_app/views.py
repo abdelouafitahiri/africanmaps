@@ -801,7 +801,6 @@ def add_item(request, location_id):
 
         # Traiter les fichiers multimédias
         media_files = request.FILES.getlist('media')
-
         if media_files:
             # إعداد عميل boto3
             s3 = boto3.client(
@@ -876,6 +875,7 @@ def update_item(request, item_id):
             name = request.POST.get('name')
             description = request.POST.get('description')
             media_files = request.FILES.getlist('media')
+            print(media_files)
 
             # Vérifier que tous les champs obligatoires sont remplis
             if not name or not description:

@@ -347,7 +347,7 @@
                                 </div>
                                 <div class="form-group mb-3">
                                     <div class="image-gallery" name="images"></div>
-                                    <button type="button" class="take-video-btn btn btn-warning mb-2">
+                                    <button type="button" class="take-video-btn btn btn-warning mb-2" hidden>
                                         <i class="fas fa-camera"></i> Capturer une image/vidéo
                                     </button>
                                     <input type="file" class="btn btn-outline-secondary form-control" name="media" id="imageInput" multiple accept="image/*,video/*" />
@@ -403,12 +403,13 @@
             <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
                 <div class="modal-dialog modal-fullscreen-lg-down">
                     <div class="modal-content">
+                        <form id="edit-form" method="POST" enctype="multipart/form-data"></form>
                         <div class="modal-header">
                             <h5 class="modal-title" id="editModalLabel">Modifier l'élément</h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
                         </div>
                         <div class="modal-body">
-                            <form id="edit-form" method="POST" enctype="multipart/form-data">
+                            
                                 {% csrf_token %}
                                 <input type="hidden" id="edit-item-id" name="item_id">
                                 <div class="form-group mb-3">
@@ -420,20 +421,21 @@
                                     <textarea class="form-control" id="edit-description" name="description" required></textarea>
                                 </div>
                                 <div class="form-group mb-3">
-                                    <button type="button" class="take-video-btn btn btn-warning mb-2">
-                                        <i class="fas fa-camera"></i> Bouton de capture
+                                    <button type="button" class="take-video-btn btn btn-warning mb-2" hidden>
+                                        <i class="fas fa-camera"></i> Capturer une image/vidéo
                                     </button>
-                                    <input type="file" name="media" id="imageInput" multiple accept="image/*,video/*" class="form-control-file" hidden />
+                                    <input type="file" class="btn btn-outline-secondary form-control" name="media" id="imageInput" multiple accept="image/*,video/*" />
                                     <div class="image-gallery mt-3" name="images"></div>
                                 </div>
                                 <input type="hidden" id="edit-geojson" name="geojson">
-                            </form>
+                           
                         </div>
                         <div class="modal-footer">
                             <button type="submit" class="btn btn-primary">Enregistrer</button>
                             <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Fermer</button>
                         </div>
                     </div>
+                </form>
                 </div>
             </div>
 
@@ -480,8 +482,9 @@
 <script src="https://js.arcgis.com/4.30/"></script>
 
 
+
 <script>
-    
+
     require([
     "esri/Map",
     "esri/views/MapView",
@@ -497,8 +500,8 @@
     "esri/geometry/Point",
     "esri/geometry/Polygon",
     "esri/geometry/Polyline"
-  ], function(Map, MapView, GraphicsLayer, SketchViewModel, Sketch, Search, Expand, BasemapGallery, Fullscreen, Basemap, Graphic, Point, Polygon, Polyline) {
-      
+    ], function(Map, MapView, GraphicsLayer, SketchViewModel, Sketch, Search, Expand, BasemapGallery, Fullscreen, Basemap, Graphic, Point, Polygon, Polyline) {
+        
         // التأكد من إنشاء الطبقات مع أسماء محددة
         const graphicsLayer = new GraphicsLayer({ title: "Existing Features Layer" });
         const sketchLayer = new GraphicsLayer({ title: "New Features Layer" });
@@ -513,15 +516,15 @@
             map: map,
             center: [-6.8498, 34.0209],
             zoom: 18,
-            ui: { components: ["zoom"] }
+            ui: {
+                components: ["zoom"]
+            }
         });
     
         // Load GeoJSON data from Django template
-
-        // Load GeoJSON data from Django template
         const locationGeoJSON = JSON.parse(`{{ location_geojson|escapejs }}`);
         const itemsGeoJSON = JSON.parse(`{{ items_geojson|escapejs }}`);
-
+    
         function addGeoJSONToMap(geojson, shouldZoom = false) {
             if (geojson && geojson.geometry) {
                 let graphicGeometry;
@@ -540,7 +543,7 @@
                             width: 2
                         }
                     };
-
+    
                 } else if (geojson.geometry.paths) {
                     graphicGeometry = new Polyline({
                         paths: geojson.geometry.paths,
@@ -552,7 +555,7 @@
                         width: 2,
                         style: "solid", // خط ثابت غير متقطع
                     };
-
+    
                 } else if (geojson.geometry.x && geojson.geometry.y) {
                     graphicGeometry = new Point({
                         x: geojson.geometry.x,
@@ -604,102 +607,117 @@
             }
         };
         
-
+    
         // Display itemsGeoJSON on the map
         itemsGeoJSON.features.forEach(feature => addGeoJSONToMap(feature, false));
-
+    
         // Use locationGeoJSON for zoom, but do not add it to the map
         addGeoJSONToMap(locationGeoJSON, true);
-
+    
         const snappingLayer = graphicsLayer;
-
+    
+        
         const sketchViewModel = new SketchViewModel({
             view: view,
             layer: graphicsLayer,
             snappingOptions: {
-                enabled: true,
-                featureEnabled: true,
-                selfEnabled: true,
-                featureSources: [{ layer: graphicsLayer }]
+            enabled: true,
+            featureEnabled: true,
+            selfEnabled: true,
+            featureSources: [{ layer: graphicsLayer }]
             },
-            // تخصيص الألوان للبوليغون
             polygonSymbol: {
-                type: "simple-fill", 
-                color: [19,23,44, 0.5],
-                outline: {
+            type: "simple-fill",
+            color: [19, 23, 44, 0.5],
+            outline: {
                 color: [255, 165, 0],
-                width: 2,
+                width: 2
             }
             },
-            // تخصيص الألوان للخطوط
             polylineSymbol: {
-                type: "simple-line",
-                color: [255, 165, 0],
-                width: 2,
+            type: "simple-line",
+            color: [255, 165, 0],
+            width: 2
             },
-            // تخصيص الألوان للنقاط
             pointSymbol: {
-                type: "simple-marker",
-                style: "circle",
-                color: [19,23,44, 0.95],
-                size: "13px",
-                outline: {
-                  color: [255, 165, 0],
-                  width: 2
-                }
-            },
-                    
-            activeLineSymbol: {
-                type: "simple-line", // Active drawing symbol
-                color: [19,23,44],  // Green color for the polyline during active drawing
-                width: 2,
-                style: "solid"  // Make sure the line style is solid, no dashed line
-            },
-
+            type: "simple-marker",
+            style: "circle",
+            color: [19, 23, 44, 0.95],
+            size: "13px",
+            outline: {
+                color: [255, 165, 0],
+                width: 2
+            }
+            }
         });
+    
         
         const sketch = new Sketch({
             view: view,
             layer: graphicsLayer,
             viewModel: sketchViewModel,
             layout: "vertical",
-        
             snappingOptions: {
-                enabled: true, // تفعيل الـ snapping
+                enabled: true,
                 featureEnabled: true,
                 selfEnabled: true,
                 featureSources: [
                     { layer: graphicsLayer, enabled: true, title: "Existing Features Layer" },
-                    { layer: sketchLayer, enabled: true, title: "New Features Layer" }  // تأكد من وجود هذه الطبقة
+                    { layer: sketchLayer, enabled: true, title: "New Features Layer" }
                 ]
             },
-            defaultUpdateOptions: {
-                tool: "reshape",  // تفعيل أداة reshape
-                enableRotation: true,
-                enableScaling: true,
-                multipleSelectionEnabled: true,
-                preserveAspectRatio: false,
-                reshapeOptions: {
-                    reshapeHandle: "vertices",
-                    reshapeMode: "all"  // تعديل كافة الأجزاء
-                }
-            },
-            defaultCreateOptions: {
-                tool: "polyline",
-                enableGuide: true,
-                tooltipOptions: { enabled: true }
-            },
+            visibleElements: {
+                undoRedoMenu: false,
+                settingsMenu: true,
+                featureCount: false,
+                duplicateFeature: false,
+                deleteFeature: false
+            }
         });
-        
-
+    
         // تفعيل عرض التولتيب بشكل افتراضي
         sketch.tooltipOptions.enabled = true;
+            
         
+        // إنشاء زر Undo
+        const undoButton = document.createElement("div");
+        undoButton.className = "esri-widget--button esri-interactive";
+        undoButton.title = "Undo";
+        undoButton.innerHTML = '<span class="esri-icon-undo"></span>';
+        undoButton.onclick = () => {
+            sketchViewModel.undo();
+        };
+    
+        // إنشاء زر Redo
+        const redoButton = document.createElement("div");
+        redoButton.className = "esri-widget--button esri-interactive";
+        redoButton.title = "Redo";
+        redoButton.innerHTML = '<span class="esri-icon-redo"></span>';
+        redoButton.onclick = () => {
+            sketchViewModel.redo();
+        };
+    
+        undoButton.style.visibility = "hidden";
+        redoButton.style.visibility = "hidden";
+    
+        function showUndoRedoButtons() {
+            undoButton.style.visibility = "visible";
+            redoButton.style.visibility = "visible";
+        }
+    
+        function hideUndoRedoButtons() {
+            undoButton.style.visibility = "hidden";
+            redoButton.style.visibility = "hidden";
+        }
+    
         // إضافة حدث لإنشاء العنصر إلى أداة الـ Sketch
         sketch.on("create", event => {
-            if (event.state === "complete") {
+            if (event.state === "start") {
+                showUndoRedoButtons(); // إظهار الأزرار عند بدء الرسم
+            } else if (event.state === "complete") {
                 activeGraphic = event.graphic; // تخزين العنصر المرسوم كعنصر نشط
                 openCreateItemModal(event.graphic.toJSON()); // فتح نافذة لإضافة التفاصيل بعد الانتهاء من الرسم
+                hideUndoRedoButtons(); // إخفاء الأزرار عند اكتمال الرسم
             }
         });
     
@@ -749,24 +767,25 @@
         const fullscreen = new Fullscreen({
             view: view 
         });
-
+    
         view.ui.add(fullscreen, "top-right");
-
+    
         const searchWidget = new Search({
             view: view,
             allPlaceholder: "Search for a place",
-            locationEnabled: true 
+            locationEnabled: true,
         });
-
+    
         const searchExpand = new Expand({
             view: view,
             content: searchWidget,
             expandIconClass: "esri-icon-search", // أيقونة البحث
             expandTooltip: "Click to search", // نص الإرشاد عند تمرير الفأرة
-            expanded: false // تأكد من أنه غير مفعل تلقائيًا حتى يظهر فقط عند النقر
+            expanded: false, // تأكد من أنه غير مفعل تلقائيًا حتى يظهر فقط عند 
+            mode: "floating"
         });
     
-        
+    
         const basemapGallery = new BasemapGallery({
             view: view
         });
@@ -783,11 +802,30 @@
         // نقل أداة التكبير والتصغير إلى الأعلى اليسار
         view.ui.move("zoom", "top-right");
     
-        // إضافة أداة Sketch إلى واجهة المستخدم
+    
+    
+        
+    
+        const sketchExpand = new Expand({
+            view: view,
+            content: sketch,
+            expandIconClass: "analysis-overlay",
+            expandTooltip: "Click to draw",
+            expanded: false,
+            mode: "floating"
+        });
+    
         view.ui.add(sketch, {
             position: "top-left",
-            index: 1 // ترتيب أعلى بقليل من أداة التكبير
+            index: 1
         });
+    
+    
+        // إضافة الأزرار إلى واجهة المستخدم
+        view.ui.add(undoButton, "top-left");
+        view.ui.add(redoButton, "top-left");
+    
+    
     
         
         // إضافة عنصر Expand إلى واجهة المستخدم في الموضع المطلوب
@@ -802,78 +840,46 @@
         });
     
     
-        function addShowInfoButton() {
-            // استهداف قسم الأزرار في أداة Sketch
-            const infoSection = document.querySelector('.esri-sketch__section.esri-sketch__info-section');
-            
-            // التأكد من أن القسم موجود ولم يتم إضافة الزر سابقًا
-            if (infoSection && !infoSection.querySelector('.custom-show-info-button')) {
-                // إنشاء زر "Show Information" جديد
-                const showInfoButton = document.createElement("calcite-action");
-                showInfoButton.setAttribute("title", "Show Information");
-                showInfoButton.setAttribute("appearance", "solid");
-                showInfoButton.setAttribute("scale", "s");
-                showInfoButton.classList.add('custom-show-info-button'); // كلاس مميز للزر
-                showInfoButton.innerHTML = `<calcite-icon icon="information" scale="s"></calcite-icon>`;
+        // إنشاء div جديد يحتوي على الأزرار
+        const actionButtonsDiv = document.createElement('div');
+        actionButtonsDiv.id = 'actionButtonsDiv';
+        actionButtonsDiv.style.display = 'flex';
+        actionButtonsDiv.style.flexDirection = 'column';
+        actionButtonsDiv.style.alignItems = 'center';
+        actionButtonsDiv.style.gap = '5px'; // تقليل المسافة بين الأزرار
     
-                // إضافة الزر بعد زر "Duplicate" إذا كان موجودًا
-                const duplicateButton = infoSection.querySelector('calcite-action[title="Duplicate feature"]');
-                if (duplicateButton) {
-                    duplicateButton.parentNode.insertBefore(showInfoButton, duplicateButton.nextSibling);
-                } else {
-                    // إذا لم يكن الزر موجودًا، نضيفه في نهاية القسم
-                    infoSection.appendChild(showInfoButton);
-                }
+        // دالة لإنشاء الأزرار بالشكل المطلوب
+        function createButton(icon, title, clickHandler) {
+            const button = document.createElement('button');
+            button.title = title;
     
-                // إضافة حدث للنقر على زر "Show Information"
-                showInfoButton.addEventListener('click', () => {
-                    if (window.selectedGraphic) {
-                        const attributes = window.selectedGraphic.attributes || {};
-                        const media = attributes.media || []; // الميديا
-                        openViewItemModal(attributes.name, attributes.description, media); // عرض المودال
-                    } else {
-                        alert('No selected graphic to show information.');
-                    }
-                });
-            }
+            // تصميم الزر ليكون أصغر حجمًا
+            button.style.border = 'none'; // إزالة الحدود
+            button.style.background = '#ffffff'; // خلفية بيضاء
+            button.style.width = '32px'; // جعل العرض والارتفاع موحد وصغير
+            button.style.height = '32px';
+            button.style.borderRadius = '5px'; // تقليل الزوايا المستديرة
+            button.style.display = 'flex';
+            button.style.alignItems = 'center';
+            button.style.justifyContent = 'center';
+            button.style.cursor = 'pointer';
+            button.style.boxShadow = '0 2px 10px rgba(0, 0, 0, 0.2);'; // تقليل الظل ليبدو أخف
+            button.style.padding = '0';
+            button.style.margin = '0';
+    
+            // إضافة الأيقونة للزر
+            const iconElement = document.createElement('calcite-icon');
+            iconElement.setAttribute('icon', icon);
+            iconElement.setAttribute('scale', 's'); // تصغير الأيقونة ليتناسب مع حجم الزر
+            iconElement.setAttribute('aria-hidden', 'true');
+            button.appendChild(iconElement);
+    
+            // إضافة حدث عند النقر
+            button.addEventListener('click', clickHandler);
+    
+            return button;
         }
     
-    
-        // وظيفة لإستبدال زر التكرار بزر الحفظ إذا لم يكن قد أُضيف بعد
-        function updateDuplicateButtonWithSave() {
-            const duplicateButton = document.querySelector('calcite-action[title="Duplicate feature"]');
-            if (duplicateButton && !duplicateButton.dataset.customSaveAdded) {
-                const customSaveButton = duplicateButton.cloneNode(true);
-                duplicateButton.style.display = 'none'; // إخفاء الزر القديم
-    
-                // إعداد خصائص الزر المخصص
-                customSaveButton.setAttribute('title', 'Save feature');
-                customSaveButton.innerHTML = ''; 
-                customSaveButton.setAttribute('scale', 's');
-                customSaveButton.setAttribute('appearance', 'solid');
-    
-                const icon = document.createElement('calcite-icon');
-                icon.setAttribute('icon', 'save'); // استخدام أيقونة الحفظ
-                icon.setAttribute('scale', 's');
-                customSaveButton.appendChild(icon);
-    
-                // إضافة حدث الحفظ
-                customSaveButton.addEventListener('click', () => {
-                    if (window.selectedGraphic && window.selectedGraphic.attributes) {
-                        const itemId = window.selectedGraphic.attributes.id;
-                        saveItem(itemId); // دالة الحفظ المخصصة
-                    } else {
-                        alert("No selected graphic to save.");
-                    }
-                });
-    
-                // استبدال زر "Duplicate" بالزر المعدل
-                duplicateButton.parentNode.appendChild(customSaveButton);
-                duplicateButton.dataset.customSaveAdded = "true"; // منع إضافة الزر مرة أخرى
-            }
-        }
-    
-        // دالة الحفظ المخصصة
         function saveItem(itemId) {
             const updatedGraphic = window.selectedGraphic;
     
@@ -892,58 +898,79 @@
             }
         }
     
-        // وظيفة لاستبدال زر الحذف إذا لم يكن قد أُضيف بعد
-        function updateDeleteButton() {
-            const deleteButton = document.querySelector('calcite-action[title="Delete feature"]');
-            if (deleteButton && !deleteButton.dataset.customDeleteAdded) {
-                const customDeleteButton = deleteButton.cloneNode(true);
-                deleteButton.style.display = 'none'; // إخفاء الزر القديم
+        // إنشاء زر إظهار المعلومات
+        const showInfoButton = createButton("information", "Show Information", () => {
+            if (window.selectedGraphic) {
+                const attributes = window.selectedGraphic.attributes || {};
+                const media = attributes.media || [];
+                openViewItemModal(attributes.name, attributes.description, media);
+            } else {
+                alert('No selected graphic to show information.');
+            }
+        });
+        actionButtonsDiv.appendChild(showInfoButton);
     
-                // إعداد مظهر الزر المخصص
-                customDeleteButton.setAttribute('title', 'Custom Delete feature');
-                customDeleteButton.innerHTML = ''; 
-                customDeleteButton.setAttribute('scale', 's');
-                customDeleteButton.setAttribute('appearance', 'solid');
     
-                const icon = document.createElement('calcite-icon');
-                icon.setAttribute('icon', 'trash'); // استخدام أيقونة الحذف
-                icon.setAttribute('scale', 's');
-                customDeleteButton.appendChild(icon);
+        // إنشاء زر التعديل أسفل زر الحفظ
+        const editButton = createButton("save-as", "Edit feature", () => {
+            if (window.selectedGraphic && window.selectedGraphic.attributes) {
+                const attributes = window.selectedGraphic.attributes || {};
+                const id = attributes.id;
+                handleEditButtonClick(id, attributes.name, attributes.description);
+            } else {
+                alert('No selected graphic to edit.');
+            }
+        });
+        actionButtonsDiv.appendChild(editButton);
     
-                // إضافة الحدث إلى الزر المخصص
-                customDeleteButton.addEventListener('click', () => {
-                    if (window.selectedGraphic && window.selectedGraphic.attributes) {
-                        const itemId = window.selectedGraphic.attributes.id;
-                        window.deleteItem(itemId); // استخدام دالة الحذف المخصصة
-                    } else {
-                        alert('No selected graphic to delete.');
-                    }
-                });
+        // تعريف دالة handleEditButtonClick لاستدعاء openEditModal
+        function handleEditButtonClick(id, name, description) {
+            openEditModal(id, name, description, JSON.stringify(window.selectedGraphic.geometry.toJSON()));
+        }
     
-                // إضافة الزر المخصص بعد الزر الأصلي
-                deleteButton.parentNode.appendChild(customDeleteButton);
-                deleteButton.dataset.customDeleteAdded = "true"; // منع إضافة الزر مرة أخرى
+        // إنشاء زر الحفظ
+        const saveButton = createButton("save", "Save feature", () => {
+            if (window.selectedGraphic && window.selectedGraphic.attributes) {
+                const itemId = window.selectedGraphic.attributes.id;
+                saveItem(itemId);
+            } else {
+                alert("No selected graphic to save.");
+            }
+        });
+        actionButtonsDiv.appendChild(saveButton);
+    
+        
+    
+        // إنشاء زر الحذف
+        const deleteButton = createButton("trash", "Delete feature", () => {
+            if (window.selectedGraphic && window.selectedGraphic.attributes) {
+                const itemId = window.selectedGraphic.attributes.id;
+                window.deleteItem(itemId);
+            } else {
+                alert('No selected graphic to delete.');
+            }
+        });
+        actionButtonsDiv.appendChild(deleteButton);
+    
+        // إضافة الأزرار إلى واجهة المستخدم
+        view.ui.add(actionButtonsDiv, {
+            position: "top-left",
+            index: 1 // إضافة بعد أداة Sketch
+        });
+    
+        // التحكم في إظهار وإخفاء الأزرار بناءً على تحديد العنصر
+        function updateButtonsVisibility() {
+            if (window.selectedGraphic) {
+                actionButtonsDiv.style.display = 'flex';
+            } else {
+                actionButtonsDiv.style.display = 'none';
             }
         }
     
-        // إنشاء MutationObserver لمراقبة DOM
-        const observer = new MutationObserver((mutationsList, observer) => {
-            // إيقاف المراقب مؤقتاً لتجنب الدخول في حلقة لانهائية
-            observer.disconnect();
+        // إخفاء الأزرار افتراضيًا في البداية
+        actionButtonsDiv.style.display = 'none';
     
-            // تحديث الأزرار في كل مرة يتغير فيها الـ DOM
-            updateDuplicateButtonWithSave(); // استبدال زر التكرار بزر الحفظ
-            updateDeleteButton(); // استبدال زر الحذف بزره المخصص
-            addShowInfoButton(); // إضافة زر عرض المعلومات
-    
-            // إعادة تفعيل المراقب بعد إجراء التغييرات
-            observer.observe(document.body, { childList: true, subtree: true });
-        });
-    
-        // بدء مراقبة DOM للتأكد من اكتشاف التغييرات
-        observer.observe(document.body, { childList: true, subtree: true });
-    
-        // Event listener for single-click (select item and store in a variable)
+        // مراقبة التحديدات على الخريطة لتحديث عرض الأزرار
         view.on("click", function(event) {
             view.hitTest(event).then(function(response) {
                 const graphic = response.results.find(result => result.graphic.layer === graphicsLayer || result.graphic.layer === sketchLayer);
@@ -952,52 +979,23 @@
                     const clickedGraphic = graphic.graphic;
                     window.selectedGraphic = clickedGraphic; // تخزين العنصر المحدد في المتغير العالمي
     
-                    const attributes = clickedGraphic.attributes || {};
-                    const media = attributes.media || []; // الحصول على الميديا من البيانات
-                    const id = attributes.id || 'undefined-id'; // التأكد من أن الـ ID موجود
-
-                    // تجهيز زر التعديل بالمعلومات المطلوبة لفتح نموذج التعديل عند النقر عليه
-                    const editButton = document.getElementById('editButton');
-                    
-                    // إزالة أي حدث قديم من الزر لتجنب التكرارات
-                    editButton.removeEventListener('click', handleEditButtonClick);
-                    
-                    // إنشاء دالة لمعالجة النقر على زر التعديل
-                    function handleEditButtonClick() {
-                        openEditModal(id, attributes.name, attributes.description, JSON.stringify(clickedGraphic.geometry.toJSON()));
-                    }
-                    
-                    // إضافة حدث جديد إلى الزر باستخدام `addEventListener`
-                    editButton.addEventListener('click', handleEditButtonClick);
-    
-                    // تجهيز زر الحذف بالمعلومات المطلوبة لحذف العنصر عند النقر عليه
-                    const deleteButton = document.getElementById('deleteButton');
-                    
-                    // إزالة أي حدث قديم من الزر لتجنب التكرارات
-                    deleteButton.removeEventListener('click', handleDeleteButtonClick);
-                    
-                    // إنشاء دالة لمعالجة النقر على زر الحذف
-                    function handleDeleteButtonClick() {
-                        deleteItem(id);
-                    }
-    
-                    // إضافة حدث جديد إلى الزر باستخدام `addEventListener`
-                    deleteButton.addEventListener('click', handleDeleteButtonClick);
+                    // تحديث عرض الأزرار بعد التحديد
+                    updateButtonsVisibility();
     
                 } else {
                     window.selectedGraphic = null; // إذا لم يتم تحديد عنصر، إفراغ المتغير
+                    updateButtonsVisibility(); // تحديث عرض الأزرار لإخفائها
                 }
             });
         });
     
-
         // Event listener for double-click to enable advanced editing of an existing graphic
         view.on("double-click", function (event) {
             event.stopPropagation(); // Prevent default double-click zoom behavior
-
+    
             view.hitTest(event).then(function (response) {
                 const graphic = response.results.find(result => result.graphic.layer === graphicsLayer || result.graphic.layer === sketchLayer);
-
+    
                 if (graphic) {
                     const clickedGraphic = graphic.graphic;
                     if (clickedGraphic.layer === graphicsLayer) {
@@ -1005,7 +1003,7 @@
                         const clonedGraphic = clickedGraphic.clone();
                         graphicsLayer.remove(clickedGraphic); // Remove the graphic from the original layer
                         sketchLayer.add(clonedGraphic); // Add the graphic to the sketch layer
-
+    
                         // Ensure the graphic has been added to the sketch layer before updating
                         if (sketchLayer.graphics.includes(clonedGraphic)) {
                             // Activate full editing mode for the graphic (reshape, move, add/remove parts)
@@ -1044,31 +1042,37 @@
                 }
             });
         });
+    
+        // Extract the project ID from the URL
+        const urlParts = window.location.pathname.split('/');
+        const projectId = urlParts[urlParts.length - 2]; // This should give you the project ID, e.g., '19'
 
-    
-        // Function to show the Create Item Modal
+        // Retrieve itemCounter specific to the project from localStorage, or initialize to 1
+        let itemCounter = parseInt(localStorage.getItem(`itemCounter_${projectId}`)) || 1;
+
+        // Function to display the modal with automatic numbering
         window.openCreateItemModal = function(geojson) {
-            // تحديث قيمة الحقل المخفي للـ GeoJSON
             document.getElementById('geojsonInput').value = JSON.stringify(geojson);
+
+            // Set the default value for the "Name" field as "Element X" where X is the current number
+            document.getElementById('itemName').value = `Élément ${itemCounter}`;
             
-            // استخدام Bootstrap لإظهار المودال
-            $('#CreateItemModal').modal('show'); // إظهار المودال باستخدام Bootstrap's JavaScript API
+            // Show the modal with Bootstrap API
+            $('#CreateItemModal').modal('show');
         };
-    
-        // Function to close the Create Item Modal using Bootstrap's modal API
+
+        // Function to close the modal
         window.closeCreateItemModal = function() {
-            $('#CreateItemModal').modal('hide'); // Hide the modal using Bootstrap's API
+            $('#CreateItemModal').modal('hide');
         };
-    
-        // Event listener to handle the removal of the active graphic when the modal is fully hidden
-        $('#CreateItemModal').on('hidden.bs.modal', function () {
-            // Remove the active graphic from the graphics layer if it exists
-            if (activeGraphic && graphicsLayer) {
-                graphicsLayer.remove(activeGraphic);
-                activeGraphic = null; // Reset the activeGraphic variable after removal
-            }
+
+        // Event listener for the form submission, increment the counter only when saving
+        document.getElementById('CreateItemModal').querySelector('form').addEventListener('submit', function(event) {
+            // Increment the counter and update the localStorage for the specific project
+            itemCounter++;
+            localStorage.setItem(`itemCounter_${projectId}`, itemCounter);
         });
-    
+
     
     
         window.openViewItemModal = function(name, description, media) {
@@ -1113,8 +1117,8 @@
                                 <button type="submit" class="btn btn-danger btn-sm w-100">Supprimer</button>
                             </form>
                         </div>`;
-
-                  carouselItem.innerHTML = mediaContent ; // + mediaControls;
+    
+                    carouselItem.innerHTML = mediaContent ; // + mediaControls;
                     carouselInner.appendChild(carouselItem);
                 });
             } else {
@@ -1188,269 +1192,94 @@
     });
     
     
+    
     // Function to show toast notifications
     function showBootstrapToast(message, type) {
-        var toastHTML = `
-            <div class="toast fade show" role="alert" aria-live="assertive" aria-atomic="true">
-                <div class="toast-header">
-                    <img src="assets/images/logo-sm.png" alt="" height="20" class="me-1">
-                    <strong class="me-auto">Rizz</strong>
-                    <small>Just now</small>
-                    <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
-                </div>
-                <div class="toast-body">
-                    ${message}
+        const toastHTML = `
+            <div class="toast align-items-center border-0" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="true">
+                <div class="d-flex">
+                    <div class="toast-body d-flex align-items-center" style="background-color: ${type === 'success' ? '#24695c' : '#D32F2F'}; color: white; padding: 10px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">
+                        <i class="${type === 'success' ? 'bi bi-check-circle-fill' : 'bi bi-exclamation-circle-fill'} pe-2"></i>
+                        <span>${message}</span>
+                    </div>
+                    <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
                 </div>
             </div>
         `;
-        
-        var toastContainer = document.getElementById('toastPlacement');
-        if (!toastContainer) {
-            // Create toast container if it doesn't exist
-            toastContainer = document.createElement('div');
-            toastContainer.id = 'toastPlacement';
-            toastContainer.className = 'toast-container position-absolute p-3 top-0 end-0';
-            document.body.appendChild(toastContainer);
-        }
-        
-        // Append the new toast
+        const toastContainer = document.getElementById('toastPlacement');
         toastContainer.insertAdjacentHTML('beforeend', toastHTML);
-
-        // Initialize and show the toast
-        var toastElement = toastContainer.lastElementChild;
-        var bootstrapToast = new bootstrap.Toast(toastElement);
-        bootstrapToast.show();
-
-        // Automatically remove the toast after it's hidden
+    
+        const toastElement = toastContainer.querySelector('.toast:last-child');
+        const toastInstance = new bootstrap.Toast(toastElement);
+        toastInstance.show();
+    
         toastElement.addEventListener('hidden.bs.toast', function () {
             toastElement.remove();
         });
     }
-
     
-    function uploadChunkedFile(file, url, chunkSize = 5 * 1024 * 1024) {
-        let start = 0;
-        let chunkIndex = 0;
-    
-        while (start < file.size) {
-            const chunk = file.slice(start, start + chunkSize);
-            const formData = new FormData();
-            formData.append('chunk', chunk);
-            formData.append('file_name', file.name);
-            formData.append('chunk_index', chunkIndex);
-    
-            // رفع الجزء إلى الخادم
-            fetch(url, {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-CSRFToken': '{{ csrf_token }}'
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                console.log(`Chunk ${chunkIndex} uploaded successfully.`);
-            })
-            .catch(error => {
-                console.error('Error uploading chunk:', error);
-            });
-    
-            start += chunkSize;
-            chunkIndex++;
+    // Global function to stop the camera stream
+    function stopCamera(stream) {
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
         }
     }
     
-    function compressImage(file, maxWidth = 800, maxHeight = 800) {
-        const img = new Image();
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-    
-        img.src = URL.createObjectURL(file);
-        img.onload = function() {
-            const ratio = Math.min(maxWidth / img.width, maxHeight / img.height);
-            canvas.width = img.width * ratio;
-            canvas.height = img.height * ratio;
-    
-            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-            canvas.toBlob(function(blob) {
-                const compressedFile = new File([blob], file.name, { type: 'image/jpeg' });
-                addMediaToInput(compressedFile);
-            }, 'image/jpeg', 0.8);  // جودة الصورة بعد الضغط
-        };
-    }
-    
-    // Function to add media files (image/video) to the input field and the gallery
-    function addMediaToInput(file) {
-        const input = document.getElementById("imageInput");
-        const dataTransfer = new DataTransfer();
-    
-        // Add existing files back to the input
-        if (input.files.length > 0) {
-            for (let i = 0; i < input.files.length; i++) {
-                dataTransfer.items.add(input.files[i]);
-            }
-        }
-    
-        // Add the new file to the input
-        dataTransfer.items.add(file);
-        input.files = dataTransfer.files;
-    }
-    
-    // Function to convert DataURL to File
-    function dataURLtoFile(dataurl, filename, mimeType) {
-        const arr = dataurl.split(',');
-        const bstr = atob(arr[1]);
-        let n = bstr.length;
-        const u8arr = new Uint8Array(n);
-        while (n--) {
-            u8arr[n] = bstr.charCodeAt(n);
-        }
-        return new File([u8arr], filename, { type: mimeType });
-    }
-    
-    // Function to remove file from input
-    function removeFileFromInput(fileName) {
-        const input = document.getElementById("imageInput");
-        const dataTransfer = new DataTransfer();
-    
-        // Add only the files that don't match the filename to the DataTransfer object
-        for (let i = 0; i < input.files.length; i++) {
-            if (input.files[i].name !== fileName) {
-                dataTransfer.items.add(input.files[i]);
-            }
-        }
-    
-        // Update the input with the remaining files
-        input.files = dataTransfer.files;
-    }
-    
-    let imageCount = 1;  // لتعداد الصور
-    let videoCount = 1;  // لتعداد الفيديوهات
-    
-    // Fonction pour ajouter une image à la galerie et à l'input
-    function addImageToGallery(imageDataUrl) {
-        const gallery = document.querySelector(".image-gallery");
-        const div = document.createElement("div");
-        div.className = "image-item col-md-6";  // Divise les éléments en 2 colonnes (6/12)
-    
-        const img = document.createElement("img");
-        img.src = imageDataUrl;
-        img.style.width = '100%';
-        img.style.height = 'auto';
-    
-        const fileName = `{{ location.name }}-image-${imageCount}.png`;  // استخدم اسم الـ location مع تسلسل رقمي
-        imageCount++;  // زيادة العدد لتسلسل الصور
-    
-        const removeBtn = document.createElement("button");
-        removeBtn.className = "btn btn-danger btn-sm mt-2";
-        removeBtn.innerText = "Supprimer";
-        removeBtn.onclick = function () {
-            div.remove();  // Supprimer de la galerie
-            removeFileFromInput(fileName);  // Supprimer de l'input
-        };
-    
-        div.appendChild(img);
-        div.appendChild(removeBtn);
-        gallery.appendChild(div);
-    
-        // Convertir l'URL de données de l'image en fichier et l'ajouter à l'input
-        const imageFile = dataURLtoFile(imageDataUrl, fileName, "image/png");
-        addMediaToInput(imageFile);
-    }
-    
-    // Fonction pour ajouter une vidéo à la galerie et à l'input
-    function addVideoToGallery(videoUrl) {
-        const gallery = document.querySelector(".image-gallery");
-        const div = document.createElement("div");
-        div.className = "image-item col-md-6";  // Divise les éléments en 2 colonnes (6/12)
-    
-        const videoElement = document.createElement("video");
-        videoElement.controls = true;
-        videoElement.src = videoUrl;
-        videoElement.style.width = '100%';
-        videoElement.style.height = 'auto';
-        div.appendChild(videoElement);
-    
-        const fileName = `{{ location.name }}-video-${videoCount}.mp4`;  // استخدم اسم الـ location مع تسلسل رقمي
-        videoCount++;  // زيادة العدد لتسلسل الفيديوهات
-    
-        const removeBtn = document.createElement("button");
-        removeBtn.className = "btn btn-danger btn-sm mt-2";
-        removeBtn.innerText = "Supprimer";
-        removeBtn.onclick = function () {
-            div.remove();  // Supprimer de la galerie
-            removeFileFromInput(fileName);  // Supprimer de l'input
-        };
-    
-        div.appendChild(removeBtn);
-        gallery.appendChild(div);
-    
-        // Convertir l'URL de la vidéo en Blob puis en fichier, et l'ajouter à l'input
-        fetch(videoUrl)
-            .then(res => res.blob())
-            .then(blob => {
-                const videoFile = new File([blob], fileName, { type: "video/mp4" });
-                addMediaToInput(videoFile);
-            });
-    }
-    
-    // Fonction pour ouvrir la caméra pour capturer des images ou enregistrer des vidéos
-    function openCamera() {
+    // Function to open the camera for capturing images or recording videos
+    function openCamera(modalId = 'CreateItemModal') {
         const modal = document.createElement("div");
         modal.className = "camera-modal";
-    
-        // Configuration CSS pour la réactivité
         modal.style.position = 'fixed';
-        modal.style.top = '50%';
+        modal.style.top = '33%';
         modal.style.left = '50%';
-        modal.style.transform = 'translate(-50%, -50%)'; // Centrer les éléments
-        modal.style.width = '90%'; // Largeur à 90% pour les petits écrans
-        modal.style.maxWidth = 'auto'; // Largeur maximale pour les grands écrans
-        modal.style.height = '596pxss';
-        modal.style.background = 'rgba(0, 0, 0, 0.7)';
-        modal.style.padding = '10px';
-        modal.style.borderRadius = '10px';
-        modal.style.boxShadow = '0px 4px 10px rgba(0,0,0,0.5)';
-        modal.style.zIndex = '9000';
+        modal.style.transform = 'translate(-50%, -50%)';
+        modal.style.width = '100%';
+        modal.style.maxWidth = '400px';
+        modal.style.height = 'auto';
+        modal.style.background = 'rgba(43, 45, 59, 0.9)';
+        modal.style.padding = '15px';
+        modal.style.borderRadius = '12px';
+        modal.style.boxShadow = '0px 4px 12px rgba(43, 45, 59,0.5)';
+        modal.style.zIndex = '10000';
         document.body.appendChild(modal);
     
         const video = document.createElement("video");
         video.autoplay = true;
-        video.style.width = '100%'; // Pleine largeur de la vidéo
-        video.style.height = 'auto';
-        video.style.borderRadius = '5px';
+        video.style.width = '100%';
+        video.style.borderRadius = '8px';
         modal.appendChild(video);
     
         const captureBtn = document.createElement("button");
         captureBtn.innerText = "Capturer une image";
-        captureBtn.className = "btn btn-primary mt-2";
-        captureBtn.style.width = '100%'; // Pleine largeur du bouton
+        captureBtn.className = "btn btn-primary mt-3";
+        captureBtn.style.width = '100%';
         modal.appendChild(captureBtn);
     
         const recordBtn = document.createElement("button");
         recordBtn.innerText = "Commencer l'enregistrement vidéo";
         recordBtn.className = "btn btn-warning mt-2";
-        recordBtn.style.width = '100%'; // Pleine largeur du bouton
+        recordBtn.style.width = '100%';
         modal.appendChild(recordBtn);
     
         const closeBtn = document.createElement("button");
         closeBtn.innerText = "Fermer";
         closeBtn.className = "btn btn-danger mt-2";
-        closeBtn.style.width = '100%'; // Pleine largeur du bouton
+        closeBtn.style.width = '100%';
         closeBtn.onclick = function () {
+            stopCamera(stream); // Stop the video stream when closing
             modal.remove();
         };
         modal.appendChild(closeBtn);
     
         let mediaRecorder;
         let recordedChunks = [];
+        let isRecording = false;
     
-        // Accéder à la caméra arrière
-        navigator.mediaDevices.getUserMedia({ video: { facingMode: { exact: "environment" } } })
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
             .then(function (stream) {
                 video.srcObject = stream;
     
-                // Capturer une image
+                // Function to capture an image
                 captureBtn.onclick = function () {
                     const canvas = document.createElement("canvas");
                     canvas.width = video.videoWidth;
@@ -1459,15 +1288,17 @@
                     context.drawImage(video, 0, 0);
                     const imageDataUrl = canvas.toDataURL("image/png");
     
-                    addImageToGallery(imageDataUrl); // Ajouter à la galerie et au champ de saisie
-                    stream.getTracks().forEach(track => track.stop());
-                    modal.remove();
-                    showBootstrapToast('Image ajoutée avec succès !', 'success');
+                    if (modalId === 'CreateItemModal') {
+                        addImageToGallery(imageDataUrl, "#CreateItemModal .image-gallery");
+                    } else if (modalId === 'editModal') {
+                        addImageToGallery(imageDataUrl, "#editModal .image-gallery");
+                    }
+                    showBootstrapToast('Image capturée avec succès !', 'success');
                 };
     
-                // Commencer l'enregistrement vidéo
+                // Function to start and stop recording
                 recordBtn.onclick = function () {
-                    if (!mediaRecorder || mediaRecorder.state === "inactive") {
+                    if (!isRecording) {
                         mediaRecorder = new MediaRecorder(stream);
                         recordedChunks = [];
     
@@ -1477,67 +1308,110 @@
                             }
                         };
     
-                        // عند إيقاف التسجيل (تسجيل الفيديو)
                         mediaRecorder.onstop = function () {
                             const videoBlob = new Blob(recordedChunks, { type: 'video/mp4' });
                             const videoUrl = URL.createObjectURL(videoBlob);
     
-                            addVideoToGallery(videoUrl); // إضافة الفيديو إلى المعرض
+                            if (modalId === 'CreateItemModal') {
+                                addVideoToGallery(videoUrl, "#CreateItemModal .image-gallery");
+                            } else if (modalId === 'editModal') {
+                                addVideoToGallery(videoUrl, "#editModal .image-gallery");
+                            }
                             showBootstrapToast('Vidéo enregistrée avec succès !', 'success');
-    
-                            // إيقاف البث وإغلاق النافذة المنبثقة
-                            stream.getTracks().forEach(track => track.stop());
-                            modal.remove();
                         };
     
-    
                         mediaRecorder.start();
-                        recordBtn.innerText = "Arrêter l'enregistrement vidéo";
-                    } else if (mediaRecorder.state === "recording") {
+                        recordBtn.innerText = "Arrêter l'enregistrement";
+                        isRecording = true;
+                    } else {
                         mediaRecorder.stop();
                         recordBtn.innerText = "Commencer l'enregistrement vidéo";
+                        isRecording = false;
                     }
+                };
+    
+                // Set close button to stop the camera and close the modal
+                closeBtn.onclick = function () {
+                    stopCamera(stream); // Stop the video stream when closing
+                    modal.remove();
                 };
             })
             .catch(function (error) {
                 console.error("Erreur lors de l'accès à la caméra:", error);
+                alert("Impossible d'accéder à la caméra. Vérifiez les permissions.");
             });
     }
     
-
-    // Function to show Bootstrap toasts
-    function showBootstrapToast(message, type) {
-        const toastHTML = `
-            <div class="toast align-items-center text-bg-${type} border-0" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="true">
-                <div class="d-flex">
-                    <div class="toast-body">
-                        ${message}
-                    </div>
-                    <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-                </div>
-            </div>
-        `;
-        const toastContainer = document.getElementById('toastPlacement');
-        toastContainer.insertAdjacentHTML('beforeend', toastHTML);
-
-        // Initialize and show the toast
-        const toastElement = toastContainer.querySelector('.toast:last-child');
-        const toastInstance = new bootstrap.Toast(toastElement);
-        toastInstance.show();
-
-        // Remove the toast from the DOM after it hides
-        toastElement.addEventListener('hidden.bs.toast', function () {
-            toastElement.remove();
-        });
+    // Function to add an image to the specified gallery
+    function addImageToGallery(imageDataUrl, gallerySelector) {
+        const gallery = document.querySelector(gallerySelector);
+        const div = document.createElement("div");
+        div.className = "media-item position-relative mb-2";
+        div.style.width = "150px"; // Set a fixed width for images and videos
+        div.style.height = "150px"; // Set a fixed height for images and videos
+    
+        const img = document.createElement("img");
+        img.src = imageDataUrl;
+        img.style.width = "100%";
+        img.style.height = "100%";
+        img.style.objectFit = "cover";
+        img.style.borderRadius = "8px";
+    
+        const removeBtn = document.createElement("button");
+        removeBtn.innerText = "Supprimer";
+        removeBtn.className = "btn btn-sm btn-danger position-absolute";
+        removeBtn.style.top = "5px";
+        removeBtn.style.right = "5px";
+        removeBtn.onclick = function () {
+            div.remove();
+            showBootstrapToast('Image supprimée avec succès !', 'danger');
+        };
+    
+        div.appendChild(img);
+        div.appendChild(removeBtn);
+        gallery.appendChild(div);
     }
     
-    // Ensure the "Add Video" button works and opens the camera modal
-    document.body.addEventListener('click', function (event) {
-        if (event.target && event.target.classList.contains('take-video-btn')) {
-            event.preventDefault();
-            openCamera();
-        }
+    // Function to add a video to the specified gallery
+    function addVideoToGallery(videoUrl, gallerySelector) {
+        const gallery = document.querySelector(gallerySelector);
+        const div = document.createElement("div");
+        div.className = "media-item position-relative mb-2";
+        div.style.width = "150px"; // Set a fixed width for images and videos
+        div.style.height = "150px"; // Set a fixed height for images and videos
+    
+        const videoElement = document.createElement("video");
+        videoElement.controls = true;
+        videoElement.src = videoUrl;
+        videoElement.style.width = "100%";
+        videoElement.style.height = "100%";
+        videoElement.style.objectFit = "cover";
+        videoElement.style.borderRadius = "8px";
+    
+        const removeBtn = document.createElement("button");
+        removeBtn.innerText = "Supprimer";
+        removeBtn.className = "btn btn-sm btn-danger position-absolute";
+        removeBtn.style.top = "5px";
+        removeBtn.style.right = "5px";
+        removeBtn.onclick = function () {
+            div.remove();
+            showBootstrapToast('Vidéo supprimée avec succès !', 'danger');
+        };
+    
+        div.appendChild(videoElement);
+        div.appendChild(removeBtn);
+        gallery.appendChild(div);
+    }
+    
+    // Associate capture buttons with openCamera
+    document.querySelector('#CreateItemModal .take-video-btn').addEventListener('click', function () {
+        openCamera('CreateItemModal');
     });
+    document.querySelector('#editModal .take-video-btn').addEventListener('click', function () {
+        openCamera('editModal');
+    });
+    
+        
 </script>
     
 <script>
