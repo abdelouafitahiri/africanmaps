@@ -66,7 +66,7 @@ require([
     container: "viewDiv",
     map: map,
     center: [-6.8498, 34.0209],
-    zoom: 13,
+    zoom: 15,
     ui: {
       components: ["zoom"] // Supprimer les autres composants y compris l'attribution
     }
