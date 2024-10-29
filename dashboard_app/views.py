@@ -344,6 +344,7 @@ def update_media_mobile(request, media_id):
     new_file = request.FILES.get('media_file')  # الحصول على الملف الجديد من الطلب
 
     if new_file:
+        print("new")
         # إعداد عميل boto3 لـ DigitalOcean Spaces
         s3 = boto3.client(
             's3',
@@ -370,7 +371,7 @@ def update_media_mobile(request, media_id):
             )
 
             # إنشاء رابط جديد للملف المرفوع
-            new_media_url = f"https://{settings.AWS_S3_CUSTOM_DOMAIN}/{unique_filename}"
+            new_media_url = f"https://{settings.AWS_S3_CUSTOM_DOMAIN}/africanmaps/{unique_filename}"
 
             # تحديث قاعدة البيانات بالملف الجديد
             media.file_url = new_media_url
@@ -387,13 +388,22 @@ def update_media_mobile(request, media_id):
 
             # محاولة حذف الملف القديم
             if old_file_key:
+                print(f"Attempting to delete old file: {old_file_key}")
+
+                # التحقق من وجود الملف قبل الحذف
                 try:
+                    response = s3.head_object(Bucket=settings.AWS_STORAGE_BUCKET_NAME, Key=old_file_key)
+                    print(f"Old file exists: {old_file_key}")
                     response = s3.delete_object(Bucket=settings.AWS_STORAGE_BUCKET_NAME, Key=old_file_key)
                     print(f"Réponse de la suppression: {response}")
                     print(f"Ancien fichier supprimé: {old_file_key}")
-                except Exception as e:
-                    print(f"Erreur lors de la suppression de l'ancien fichier: {e}")
-                    messages.warning(request, f"Erreur lors de la suppression de l'ancien fichier: {e}")
+                except s3.exceptions.ClientError as e:
+                    # إذا كان الخطأ بسبب عدم وجود الملف
+                    if e.response['Error']['Code'] == '404':
+                        print(f"Le fichier n'existe pas: {old_file_key}")
+                    else:
+                        print(f"Erreur lors de la tentative de suppression: {e}")
+                        messages.warning(request, f"Erreur lors de la suppression de l'ancien fichier: {e}")
 
             messages.success(request, "Le fichier média a été mis à jour avec succès!")
             return redirect(reverse('location_mobile', args=[media.item.location.id]))

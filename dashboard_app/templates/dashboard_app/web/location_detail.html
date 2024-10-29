@@ -327,7 +327,7 @@
             <div id="viewDiv"></div>
 
             
-            <!-- Modal pour ajouter un nouvel élément avec la capture de caméra -->
+             <!-- Modal pour ajouter un nouvel élément avec la capture de caméra -->
             <div class="modal fade" id="CreateItemModal" tabindex="-1" aria-labelledby="CreateItemModalLabel" aria-hidden="true">
                 <div class="modal-dialog modal-fullscreen-lg-down">
                     <div class="modal-content">
@@ -348,7 +348,7 @@
                                 </div>
                                 <div class="form-group mb-3">
                                     <div class="image-gallery" name="images"></div>
-                                    <button type="button" class="take-video-btn btn btn-warning mb-2">
+                                    <button type="button" class="take-video-btn btn btn-warning mb-2 w-100" hidden>
                                         <i class="fas fa-camera"></i> Capturer une image/vidéo
                                     </button>
                                     <input type="file" class="btn btn-outline-secondary form-control" name="media" id="imageInput" multiple accept="image/*,video/*" />
@@ -363,7 +363,6 @@
                     </div>
                 </div>
             </div>
-
             
 
             <!-- Modal pour afficher les détails d'un élément -->
@@ -1261,145 +1260,75 @@
         });
     }
     
-    // Global function to stop the camera stream
-    function stopCamera(stream) {
-        if (stream) {
-            stream.getTracks().forEach(track => track.stop());
+    
+        
+    // Function to add media files (image/video) to the input field and the gallery
+    function addMediaToInput(file) {
+        const input = document.getElementById("imageInput");
+        const dataTransfer = new DataTransfer();
+
+        // Add existing files back to the input
+        if (input.files.length > 0) {
+            for (let i = 0; i < input.files.length; i++) {
+                dataTransfer.items.add(input.files[i]);
+            }
         }
+
+        // Add the new file to the input
+        dataTransfer.items.add(file);
+        input.files = dataTransfer.files;
     }
-    
-    // Function to open the camera for capturing images or recording videos
-    function openCamera(modalId = 'CreateItemModal') {
-        const modal = document.createElement("div");
-        modal.className = "camera-modal";
-        modal.style.position = 'fixed';
-        modal.style.top = '33%';
-        modal.style.left = '50%';
-        modal.style.transform = 'translate(-50%, -50%)';
-        modal.style.width = '100%';
-        modal.style.maxWidth = '400px';
-        modal.style.height = 'auto';
-        modal.style.background = 'rgba(43, 45, 59, 0.9)';
-        modal.style.padding = '15px';
-        modal.style.borderRadius = '12px';
-        modal.style.boxShadow = '0px 4px 12px rgba(43, 45, 59,0.5)';
-        modal.style.zIndex = '10000';
-        document.body.appendChild(modal);
-    
-        const video = document.createElement("video");
-        video.autoplay = true;
-        video.style.width = '100%';
-        video.style.borderRadius = '8px';
-        modal.appendChild(video);
-    
-        const captureBtn = document.createElement("button");
-        captureBtn.innerText = "Capturer une image";
-        captureBtn.className = "btn btn-primary mt-3";
-        captureBtn.style.width = '100%';
-        modal.appendChild(captureBtn);
-    
-        const recordBtn = document.createElement("button");
-        recordBtn.innerText = "Commencer l'enregistrement vidéo";
-        recordBtn.className = "btn btn-warning mt-2";
-        recordBtn.style.width = '100%';
-        modal.appendChild(recordBtn);
-    
-        const closeBtn = document.createElement("button");
-        closeBtn.innerText = "Fermer";
-        closeBtn.className = "btn btn-danger mt-2";
-        closeBtn.style.width = '100%';
-        closeBtn.onclick = function () {
-            stopCamera(stream); // Stop the video stream when closing
-            modal.remove();
-        };
-        modal.appendChild(closeBtn);
-    
-        let mediaRecorder;
-        let recordedChunks = [];
-        let isRecording = false;
-    
-        navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
-            .then(function (stream) {
-                video.srcObject = stream;
-    
-                // Function to capture an image
-                captureBtn.onclick = function () {
-                    const canvas = document.createElement("canvas");
-                    canvas.width = video.videoWidth;
-                    canvas.height = video.videoHeight;
-                    const context = canvas.getContext("2d");
-                    context.drawImage(video, 0, 0);
-                    const imageDataUrl = canvas.toDataURL("image/png");
-    
-                    if (modalId === 'CreateItemModal') {
-                        addImageToGallery(imageDataUrl, "#CreateItemModal .image-gallery");
-                    } else if (modalId === 'editModal') {
-                        addImageToGallery(imageDataUrl, "#editModal .image-gallery");
-                    }
-                    showBootstrapToast('Image capturée avec succès !', 'success');
-                };
-    
-                // Function to start and stop recording
-                recordBtn.onclick = function () {
-                    if (!isRecording) {
-                        mediaRecorder = new MediaRecorder(stream);
-                        recordedChunks = [];
-    
-                        mediaRecorder.ondataavailable = function (event) {
-                            if (event.data.size > 0) {
-                                recordedChunks.push(event.data);
-                            }
-                        };
-    
-                        mediaRecorder.onstop = function () {
-                            const videoBlob = new Blob(recordedChunks, { type: 'video/mp4' });
-                            const videoUrl = URL.createObjectURL(videoBlob);
-    
-                            if (modalId === 'CreateItemModal') {
-                                addVideoToGallery(videoUrl, "#CreateItemModal .image-gallery");
-                            } else if (modalId === 'editModal') {
-                                addVideoToGallery(videoUrl, "#editModal .image-gallery");
-                            }
-                            showBootstrapToast('Vidéo enregistrée avec succès !', 'success');
-                        };
-    
-                        mediaRecorder.start();
-                        recordBtn.innerText = "Arrêter l'enregistrement";
-                        isRecording = true;
-                    } else {
-                        mediaRecorder.stop();
-                        recordBtn.innerText = "Commencer l'enregistrement vidéo";
-                        isRecording = false;
-                    }
-                };
-    
-                // Set close button to stop the camera and close the modal
-                closeBtn.onclick = function () {
-                    stopCamera(stream); // Stop the video stream when closing
-                    modal.remove();
-                };
-            })
-            .catch(function (error) {
-                console.error("Erreur lors de l'accès à la caméra:", error);
-                alert("Impossible d'accéder à la caméra. Vérifiez les permissions.");
-            });
+
+    // Function to convert DataURL to File
+    function dataURLtoFile(dataurl, filename, mimeType) {
+        const arr = dataurl.split(',');
+        const bstr = atob(arr[1]);
+        let n = bstr.length;
+        const u8arr = new Uint8Array(n);
+        while (n--) {
+            u8arr[n] = bstr.charCodeAt(n);
+        }
+        return new File([u8arr], filename, { type: mimeType });
     }
-    
-    // Function to add an image to the specified gallery
-    function addImageToGallery(imageDataUrl, gallerySelector) {
-        const gallery = document.querySelector(gallerySelector);
+
+    // Function to remove file from input
+    function removeFileFromInput(fileName) {
+        const input = document.getElementById("imageInput");
+        const dataTransfer = new DataTransfer();
+
+        // Add only the files that don't match the filename to the DataTransfer object
+        for (let i = 0; i < input.files.length; i++) {
+            if (input.files[i].name !== fileName) {
+                dataTransfer.items.add(input.files[i]);
+            }
+        }
+
+        // Update the input with the remaining files
+        input.files = dataTransfer.files;
+    }
+
+    let imageCount = 1;  // لتعداد الصور
+    let videoCount = 1;  // لتعداد الفيديوهات
+
+    // Fonction pour ajouter une image à la galerie et à l'input
+    function addImageToGallery(imageDataUrl) {
+        const gallery = document.querySelector(".image-gallery");
         const div = document.createElement("div");
         div.className = "media-item position-relative mb-2";
         div.style.width = "150px"; // Set a fixed width for images and videos
         div.style.height = "150px"; // Set a fixed height for images and videos
-    
+
+
         const img = document.createElement("img");
         img.src = imageDataUrl;
         img.style.width = "100%";
         img.style.height = "100%";
         img.style.objectFit = "cover";
         img.style.borderRadius = "8px";
-    
+
+        const fileName = `{{ location.name }}-image-${imageCount}.png`;  // استخدم اسم الـ location مع تسلسل رقمي
+        imageCount++; 
+
         const removeBtn = document.createElement("button");
         removeBtn.innerText = "Supprimer";
         removeBtn.className = "btn btn-sm btn-danger position-absolute";
@@ -1407,22 +1336,28 @@
         removeBtn.style.right = "5px";
         removeBtn.onclick = function () {
             div.remove();
+            removeFileFromInput(fileName);
             showBootstrapToast('Image supprimée avec succès !', 'danger');
         };
-    
+
+
         div.appendChild(img);
         div.appendChild(removeBtn);
         gallery.appendChild(div);
+
+        // Convertir l'URL de données de l'image en fichier et l'ajouter à l'input
+        const imageFile = dataURLtoFile(imageDataUrl, fileName, "image/png");
+        addMediaToInput(imageFile);
     }
-    
-    // Function to add a video to the specified gallery
-    function addVideoToGallery(videoUrl, gallerySelector) {
-        const gallery = document.querySelector(gallerySelector);
+
+    // Fonction pour ajouter une vidéo à la galerie et à l'input
+    function addVideoToGallery(videoUrl) {
+        const gallery = document.querySelector(".image-gallery");
         const div = document.createElement("div");
         div.className = "media-item position-relative mb-2";
         div.style.width = "150px"; // Set a fixed width for images and videos
         div.style.height = "150px"; // Set a fixed height for images and videos
-    
+
         const videoElement = document.createElement("video");
         videoElement.controls = true;
         videoElement.src = videoUrl;
@@ -1430,7 +1365,13 @@
         videoElement.style.height = "100%";
         videoElement.style.objectFit = "cover";
         videoElement.style.borderRadius = "8px";
-    
+
+        
+        div.appendChild(videoElement);
+
+        const fileName = `{{ location.name }}-video-${videoCount}.mp4`;  // استخدم اسم الـ location مع تسلسل رقمي
+        videoCount++;  // زيادة العدد لتسلسل الفيديوهات
+
         const removeBtn = document.createElement("button");
         removeBtn.innerText = "Supprimer";
         removeBtn.className = "btn btn-sm btn-danger position-absolute";
@@ -1438,22 +1379,140 @@
         removeBtn.style.right = "5px";
         removeBtn.onclick = function () {
             div.remove();
-            showBootstrapToast('Vidéo supprimée avec succès !', 'danger');
+            removeFileFromInput(fileName);
+            showBootstrapToast('Image supprimée avec succès !', 'danger');
         };
-    
-        div.appendChild(videoElement);
+
+
         div.appendChild(removeBtn);
         gallery.appendChild(div);
+
+        // Convertir l'URL de la vidéo en Blob puis en fichier, et l'ajouter à l'input
+        fetch(videoUrl)
+            .then(res => res.blob())
+            .then(blob => {
+                const videoFile = new File([blob], fileName, { type: "video/mp4" });
+                addMediaToInput(videoFile);
+            });
     }
-    
-    // Associate capture buttons with openCamera
-    document.querySelector('#CreateItemModal .take-video-btn').addEventListener('click', function () {
-        openCamera('CreateItemModal');
+
+    // Fonction pour ouvrir la caméra pour capturer des images ou enregistrer des vidéos
+    function openCamera() {
+        const modal = document.createElement("div");
+        modal.className = "camera-modal";
+        modal.style.position = 'fixed';
+        modal.style.top = '35%';
+        modal.style.left = '50%';
+        modal.style.transform = 'translate(-50%, -50%)';
+        modal.style.width = '100%';
+        modal.style.maxWidth = '400px';
+        modal.style.height = 'auto';
+        modal.style.background = 'rgba(43, 45, 59, 0.9)';
+        modal.style.padding = '15px';
+        modal.style.borderRadius = '15px';
+        modal.style.boxShadow = '0px 4px 15px rgba(43, 45, 59,0.5)';
+        modal.style.zIndex = '10000';
+        document.body.appendChild(modal);
+
+        const video = document.createElement("video");
+        video.autoplay = true;
+        video.style.width = '100%'; // Pleine largeur de la vidéo
+        video.style.height = 'auto';
+        video.style.borderRadius = '8px';
+        modal.appendChild(video);
+
+        const captureBtn = document.createElement("button");
+        captureBtn.innerText = "Capturer une image";
+        captureBtn.className = "btn btn-primary mt-2";
+        captureBtn.style.width = '100%'; // Pleine largeur du bouton
+        modal.appendChild(captureBtn);
+
+        const recordBtn = document.createElement("button");
+        recordBtn.innerText = "Commencer l'enregistrement vidéo";
+        recordBtn.className = "btn btn-warning mt-2";
+        recordBtn.style.width = '100%'; // Pleine largeur du bouton
+        modal.appendChild(recordBtn);
+
+        const closeBtn = document.createElement("button");
+        closeBtn.innerText = "Fermer";
+        closeBtn.className = "btn btn-danger mt-2";
+        closeBtn.style.width = '100%'; // Pleine largeur du bouton
+        closeBtn.onclick = function () {
+            modal.remove();
+        };
+        modal.appendChild(closeBtn);
+
+        let mediaRecorder;
+        let recordedChunks = [];
+
+        // Accéder à la caméra arrière
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: { exact: "environment" } } })
+            .then(function (stream) {
+                video.srcObject = stream;
+
+                // Capturer une image
+                captureBtn.onclick = function () {
+                    const canvas = document.createElement("canvas");
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    const context = canvas.getContext("2d");
+                    context.drawImage(video, 0, 0);
+                    const imageDataUrl = canvas.toDataURL("image/png");
+
+                    addImageToGallery(imageDataUrl); // Ajouter à la galerie et au champ de saisie
+                    stream.getTracks().forEach(track => track.stop());
+                    modal.remove();
+                    showBootstrapToast('Image ajoutée avec succès !', 'success');
+                };
+
+                // Commencer l'enregistrement vidéo
+                recordBtn.onclick = function () {
+                    if (!mediaRecorder || mediaRecorder.state === "inactive") {
+                        mediaRecorder = new MediaRecorder(stream);
+                        recordedChunks = [];
+
+                        mediaRecorder.ondataavailable = function (event) {
+                            if (event.data.size > 0) {
+                                recordedChunks.push(event.data);
+                            }
+                        };
+
+                        // عند إيقاف التسجيل (تسجيل الفيديو)
+                        mediaRecorder.onstop = function () {
+                            const videoBlob = new Blob(recordedChunks, { type: 'video/mp4' });
+                            const videoUrl = URL.createObjectURL(videoBlob);
+
+                            addVideoToGallery(videoUrl); // إضافة الفيديو إلى المعرض
+                            showBootstrapToast('Vidéo enregistrée avec succès !', 'success');
+
+                            // إيقاف البث وإغلاق النافذة المنبثقة
+                            stream.getTracks().forEach(track => track.stop());
+                            modal.remove();
+                        };
+
+
+                        mediaRecorder.start();
+                        recordBtn.innerText = "Arrêter l'enregistrement vidéo";
+                    } else if (mediaRecorder.state === "recording") {
+                        mediaRecorder.stop();
+                        recordBtn.innerText = "Commencer l'enregistrement vidéo";
+                    }
+                };
+            })
+            .catch(function (error) {
+                console.error("Erreur lors de l'accès à la caméra:", error);
+            });
+    }
+
+
+
+    // Ensure the "Add Video" button works and opens the camera modal
+    document.body.addEventListener('click', function (event) {
+        if (event.target && event.target.classList.contains('take-video-btn')) {
+            event.preventDefault();
+            openCamera();
+        }
     });
-    document.querySelector('#editModal .take-video-btn').addEventListener('click', function () {
-        openCamera('editModal');
-    });
-    
         
 </script>
     
