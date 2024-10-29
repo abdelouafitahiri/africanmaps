@@ -18,7 +18,7 @@ def login_mobile(request):
         else:
             messages.warning(request, "Le nom d'utilisateur ou le mot de passe est incorrect !!")
             return redirect('login')
-    return render(request, 'authenticate/login.html')
+    return render(request, 'authenticate/login_mobile.html')
 
 
 def logout_mobile(request):

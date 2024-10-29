@@ -280,7 +280,7 @@
 
 
 
-<div class="row justify-content-center">
+    <div class="row justify-content-center">
 
 
     <div class="col-lg">
@@ -321,47 +321,37 @@
             <div class="card-body">
               
             <!-- Container for Bootstrap Toasts -->
-            <div class="toast-container position-absolute p-3 top-0 end-0" id="toastPlacement"></div>
+            <div class="toast-container position-absolute top-50 start-50 translate-middle-x p-3" style="top: 70%;" id="toastPlacement"></div>
             
             <!-- Formulaire de mise à jour des info -->
             <div id="viewDiv"></div>
 
             <!-- Modal pour ajouter un nouvel élément avec la capture de caméra -->
             <div class="modal fade" id="CreateItemModal" tabindex="-1" aria-labelledby="CreateItemModalLabel" aria-hidden="true">
-                <div class="modal-dialog modal-fullscreen-lg-down">
+                <div class="modal-dialog">
                     <div class="modal-content">
                         <div class="modal-header">
-                            <h5 class="modal-title" id="CreateItemModalLabel">Créer un élément</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+                            <h5 class="modal-title" id="CreateItemModalLabel">Ajouter un nouvel élément</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
-                        <form method="POST" action="{% url 'add-item' location.id %}" enctype="multipart/form-data">
                         <div class="modal-body">
-                                {% csrf_token %}
-                                <div class="form-group mb-3">
-                                    <label for="itemName">Nom</label>
-                                    <input type="text" class="form-control" id="itemName" name="name" placeholder="Nom" required />
+                            <form id="createItemForm">
+                                <input type="hidden" id="geojsonInput" name="geojson">
+                                <div class="mb-3">
+                                    <label for="itemName" class="form-label">Nom de l'élément</label>
+                                    <input type="text" class="form-control" id="itemName" name="name">
                                 </div>
-                                <div class="form-group mb-3">
-                                    <label for="itemDescription">Description</label>
-                                    <textarea class="form-control" id="itemDescription" name="description" placeholder="Description" required></textarea>
+                                <div class="mb-3">
+                                    <label for="itemDescription" class="form-label">Description</label>
+                                    <textarea class="form-control" id="itemDescription" name="description"></textarea>
                                 </div>
-                                <div class="form-group mb-3">
-                                    <div class="image-gallery" name="images"></div>
-                                    <button type="button" class="take-video-btn btn btn-warning mb-2" hidden>
-                                        <i class="fas fa-camera"></i> Capturer une image/vidéo
-                                    </button>
-                                    <input type="file" class="btn btn-outline-secondary form-control" name="media" id="imageInput" multiple accept="image/*,video/*" />
-                                </div>
-                                <input type="hidden" name="geojson" id="geojsonInput" />
+                                <button type="submit" class="btn btn-primary">Ajouter</button>
+                            </form>
                         </div>
-                        <div class="modal-footer">
-                            <button type="submit" class="btn btn-primary">Enregistrer</button>
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
-                        </div>
-                    </form>
                     </div>
                 </div>
             </div>
+            
 
             <!-- Modal pour afficher les détails d'un élément -->
             <div class="modal fade" id="viewItemModal" tabindex="-1" aria-labelledby="viewItemModalLabel" aria-hidden="true">
@@ -439,6 +429,25 @@
                 </div>
             </div>
 
+            <!-- Modal pour supprimer un élément -->
+            <div class="modal fade" id="deleteItemModal" tabindex="-1" aria-labelledby="deleteItemModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-fullscreen-lg-down">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="deleteItemModalLabel">Supprimer l'Élément</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p>Êtes-vous sûr de vouloir supprimer cet élément ?</p>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                            <button type="button" class="btn btn-danger" id="confirmDeleteButton">Supprimer</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             
             </div>
             </div>
@@ -502,7 +511,6 @@
     "esri/geometry/Polyline"
     ], function(Map, MapView, GraphicsLayer, SketchViewModel, Sketch, Search, Expand, BasemapGallery, Fullscreen, Basemap, Graphic, Point, Polygon, Polyline) {
         
-        // التأكد من إنشاء الطبقات مع أسماء محددة
         const graphicsLayer = new GraphicsLayer({ title: "Existing Features Layer" });
         const sketchLayer = new GraphicsLayer({ title: "New Features Layer" });
     
@@ -802,10 +810,6 @@
         // نقل أداة التكبير والتصغير إلى الأعلى اليسار
         view.ui.move("zoom", "top-right");
     
-    
-    
-        
-    
         const sketchExpand = new Expand({
             view: view,
             content: sketch,
@@ -815,7 +819,7 @@
             mode: "floating"
         });
     
-        view.ui.add(sketch, {
+        view.ui.add(sketchExpand, {
             position: "top-left",
             index: 1
         });
@@ -940,14 +944,14 @@
         actionButtonsDiv.appendChild(saveButton);
     
         
-    
-        // إنشاء زر الحذف
-        const deleteButton = createButton("trash", "Delete feature", () => {
+        // Créer le bouton de suppression et lui associer une fonction pour afficher le modal de confirmation
+        const deleteButton = createButton("trash", "Supprimer l'élément", () => {
+            // Vérifier s'il y a un élément graphique sélectionné pour la suppression
             if (window.selectedGraphic && window.selectedGraphic.attributes) {
                 const itemId = window.selectedGraphic.attributes.id;
-                window.deleteItem(itemId);
+                openDeleteModal(itemId);  // Appeler le modal pour confirmer la suppression
             } else {
-                alert('No selected graphic to delete.');
+                alert('Aucun graphique sélectionné à supprimer.');
             }
         });
         actionButtonsDiv.appendChild(deleteButton);
@@ -1043,37 +1047,55 @@
             });
         });
     
-        // Extract the project ID from the URL
-        const urlParts = window.location.pathname.split('/');
-        const projectId = urlParts[urlParts.length - 2]; // This should give you the project ID, e.g., '19'
+        
+        let itemCounter = 0; // تعريف متغير عالمي itemCounter
 
-        // Retrieve itemCounter specific to the project from localStorage, or initialize to 1
-        let itemCounter = parseInt(localStorage.getItem(`itemCounter_${projectId}`)) || 1;
+        $(document).ready(function() {
+            const locationId = '{{ location.id }}';
 
-        // Function to display the modal with automatic numbering
-        window.openCreateItemModal = function(geojson) {
-            document.getElementById('geojsonInput').value = JSON.stringify(geojson);
+            $.ajax({
+                url: `/get_last_item_number/${locationId}/`,
+                method: 'GET',
+                success: function(data) {
+                    itemCounter = data.last_item_number + 1; 
+                    console.log(`Updated itemCounter: ${itemCounter}`);
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error fetching last item number:', error);
+                }
+            });
 
-            // Set the default value for the "Name" field as "Element X" where X is the current number
-            document.getElementById('itemName').value = `Élément ${itemCounter}`;
-            
-            // Show the modal with Bootstrap API
-            $('#CreateItemModal').modal('show');
-        };
+            $('#addItemBtn').on('click', function() {
+                openCreateItemModal();
+            });
 
-        // Function to close the modal
-        window.closeCreateItemModal = function() {
-            $('#CreateItemModal').modal('hide');
-        };
+            $('#createItemForm').on('submit', function(e) {
+                e.preventDefault();
+                const geojsonInput = $('#geojsonInput').val();
+                const nameInput = $('#itemName').val();
+                const descriptionInput = $('#descriptionInput').val();
 
-        // Event listener for the form submission, increment the counter only when saving
-        document.getElementById('CreateItemModal').querySelector('form').addEventListener('submit', function(event) {
-            // Increment the counter and update the localStorage for the specific project
-            itemCounter++;
-            localStorage.setItem(`itemCounter_${projectId}`, itemCounter);
+                $.post(`/add_item_mobile/${locationId}/`, {
+                    geojson: geojsonInput,
+                    name: nameInput,
+                    description: descriptionInput,
+                    media: $('input[type="file"]').prop('files')
+                }).done(function() {
+                    $('#CreateItemModal').modal('hide');
+                    location.reload(); // تحديث الصفحة بعد الإضافة
+                }).fail(function() {
+                    alert('فشل في إضافة العنصر.');
+                });
+            });
         });
 
-    
+        window.openCreateItemModal = function() {
+            const itemNameInput = document.getElementById('itemName');
+            if (itemNameInput) {
+                itemNameInput.value = `Élément ${itemCounter}`;
+            }
+            $('#CreateItemModal').modal('show');
+        };
     
         window.openViewItemModal = function(name, description, media) {
             // تحديث اسم المكان والوصف في الـ modal
@@ -1165,29 +1187,56 @@
             }
         };
     
-        window.deleteItem = function(itemId) {
-            if (confirm("Êtes-vous sûr de vouloir supprimer cet élément ?")) {
-                fetch(`/item/${itemId}/delete/`, {
+        // Variable pour stocker l'ID de l'élément à supprimer
+        
+        let itemIdToDelete = null;
+
+        window.openDeleteModal = function(itemId) {
+            itemIdToDelete = itemId;  
+            const deleteModal = new bootstrap.Modal(document.getElementById('deleteItemModal'));
+            deleteModal.show();  
+        };
+
+        document.getElementById('confirmDeleteButton').addEventListener('click', function() {
+            if (itemIdToDelete !== null) {  
+                fetch(`/item/${itemIdToDelete}/delete/`, {  
                     method: 'POST',
                     headers: {
-                        'X-CSRFToken': '{{ csrf_token }}'
+                        'X-CSRFToken': '{{ csrf_token }}'  
                     }
                 })
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        showBootstrapToast('L\'élément a été supprimé avec succès!', "success");
-                        location.reload();
+                        // Store the success message from the server in sessionStorage
+                        sessionStorage.setItem('deleteSuccessMessage', data.message);
+                        location.reload();  
                     } else {
                         showBootstrapToast('Erreur lors de la suppression de l\'élément: ' + data.message, "danger");
                     }
                 })
                 .catch(error => {
-                    console.error('Error:', error);
-                    showBootstrapToast('Une erreur s\'est produite lors de l\'envoi de la demande.', "danger");
+                    console.error('Erreur:', error);
+                    showBootstrapToast('Une erreur s\'est produite lors de l\'envoi de la demande.', "danger");  
+                })
+                .finally(() => {
+                    const deleteModal = bootstrap.Modal.getInstance(document.getElementById('deleteItemModal'));
+                    deleteModal.hide();
+                    itemIdToDelete = null;  
                 });
             }
+        });
+
+        // Show the success message after the page loads
+        window.onload = function() {
+            const message = sessionStorage.getItem('deleteSuccessMessage');
+            if (message) {
+                showBootstrapToast(message, "success");
+                sessionStorage.removeItem('deleteSuccessMessage');  // Remove the message after displaying it
+            }
         };
+
+
     
     });
     
@@ -1196,13 +1245,13 @@
     // Function to show toast notifications
     function showBootstrapToast(message, type) {
         const toastHTML = `
-            <div class="toast align-items-center border-0" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="true">
-                <div class="d-flex">
-                    <div class="toast-body d-flex align-items-center" style="background-color: ${type === 'success' ? '#24695c' : '#D32F2F'}; color: white; padding: 10px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">
-                        <i class="${type === 'success' ? 'bi bi-check-circle-fill' : 'bi bi-exclamation-circle-fill'} pe-2"></i>
-                        <span>${message}</span>
-                    </div>
-                    <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            <div class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <strong class="me-auto">AfricanMaps</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+                <div class="toast-body">
+                    ${message}
                 </div>
             </div>
         `;

@@ -3,7 +3,8 @@ let graphicsLayer = null;
 
 window.deleteGraphicAndClose = function () {
   if (activeGraphic && graphicsLayer) {
-    graphicsLayer.remove(activeGraphic);
+    graphicsLayer.remove(activeGraphic); // إزالة الرسم
+    activeGraphic = null; // إعادة تعيين activeGraphic إلى null
   }
   closePopupModal();
 };
@@ -16,16 +17,28 @@ window.closePopupModal = function () {
   }
 };
 
-
 window.openPopupModal = function () {
   const modalElement = document.getElementById("popupModal");
   const modal = new bootstrap.Modal(modalElement);
   modal.show();
-  
+
+  // تعبئة الحقول بالبيانات من activeGraphic إذا كانت موجودة
   document.getElementById("featureName").value = activeGraphic && activeGraphic.attributes ? activeGraphic.attributes.name || '' : '';
   document.getElementById("featureDescription").value = activeGraphic && activeGraphic.attributes ? activeGraphic.attributes.description || '' : '';
   document.getElementById("geojsonData").value = activeGraphic ? JSON.stringify(activeGraphic.toJSON()) : '';
 };
+
+// إضافة حدث إزالة الرسم عند إغلاق الـ modal
+document.addEventListener("DOMContentLoaded", function() {
+  const modalElement = document.getElementById("popupModal");
+
+  modalElement.addEventListener("hidden.bs.modal", function () {
+    if (activeGraphic && graphicsLayer) {
+      graphicsLayer.remove(activeGraphic); // إزالة الرسم من الطبقة
+      activeGraphic = null; // إعادة تعيين activeGraphic إلى null
+    }
+  });
+});
 
 
 require([
@@ -109,19 +122,57 @@ require([
     },
 
   });
-  
+
   // إعداد Sketch وربطه مع SketchViewModel
   const sketch = new Sketch({
-    view: view,
-    layer: graphicsLayer,
-    viewModel: sketchViewModel,
-    layout: "vertical",
-    availableCreateTools: ["polygon", "polyline", "point", "rectangle", "circle", "text"],
-    creationMode: "update"
+      view: view,
+      layer: graphicsLayer,
+      viewModel: sketchViewModel,
+      layout: "vertical",
+      visibleElements: {
+          undoRedoMenu: false,
+          settingsMenu: true,
+          featureCount: false,
+          duplicateFeature: false,
+          deleteFeature: false
+      }
   });
+
+  // تمكين خيارات التلميحات في الـ Sketch
+  sketch.tooltipOptions.enabled = true;
   
 
-  sketch.tooltipOptions.enabled = true;
+
+  // إنشاء زر Undo
+  const undoButton = document.createElement("div");
+  undoButton.className = "esri-widget--button esri-interactive";
+  undoButton.title = "Undo";
+  undoButton.innerHTML = '<span class="esri-icon-undo"></span>';
+  undoButton.onclick = () => {
+      sketchViewModel.undo();
+  };
+
+  // إنشاء زر Redo
+  const redoButton = document.createElement("div");
+  redoButton.className = "esri-widget--button esri-interactive";
+  redoButton.title = "Redo";
+  redoButton.innerHTML = '<span class="esri-icon-redo"></span>';
+  redoButton.onclick = () => {
+      sketchViewModel.redo();
+  };
+
+  undoButton.style.visibility = "hidden";
+  redoButton.style.visibility = "hidden";
+
+  function showUndoRedoButtons() {
+      undoButton.style.visibility = "visible";
+      redoButton.style.visibility = "visible";
+  }
+
+  function hideUndoRedoButtons() {
+      undoButton.style.visibility = "hidden";
+      redoButton.style.visibility = "hidden";
+  }
 
   const fullscreen = new Fullscreen({
       view: view 
@@ -164,11 +215,25 @@ require([
   // نقل أداة التكبير والتصغير إلى الأعلى اليسار
   view.ui.move("zoom", "top-right");
 
-  // إضافة أداة Sketch إلى واجهة المستخدم
-  view.ui.add(sketch, {
-      position: "top-left",
-      index: 1 // ترتيب أعلى بقليل من أداة التكبير
+  
+  
+  const sketchExpand = new Expand({
+      view: view,
+      content: sketch,
+      expandIconClass: "analysis-overlay",
+      expandTooltip: "Click to draw",
+      expanded: false,
+      mode: "floating"
   });
+
+  view.ui.add(sketchExpand, {
+      position: "top-left",
+      index: 1
+  });
+
+  view.ui.add(undoButton, "top-left");
+  view.ui.add(redoButton, "top-left");
+
 
   
   // إضافة عنصر Expand إلى واجهة المستخدم في الموضع المطلوب
@@ -182,12 +247,14 @@ require([
       index: 2 // ترتيب أعلى بقليل من أداة التكبير وأداة الرسم
   });
 
-
-
   sketch.on("create", function (event) {
-    if (event.state === "complete") {
-      activeGraphic = event.graphic;
+    if (event.state === "start") {
+      showUndoRedoButtons(); 
+
+    } else if (event.state === "complete") {
+      activeGraphic = event.graphic; // تخزين العنصر المرسوم كعنصر نشط
       openPopupModal();
+      hideUndoRedoButtons(); // إخفاء الأزرار عند اكتمال الرسم
     }
   });
 

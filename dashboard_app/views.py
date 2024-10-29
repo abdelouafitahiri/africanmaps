@@ -62,7 +62,7 @@ def save_location_mobile(request):
             geojson=geojson,
         )
         messages.success(request, 'Le projet a été enregistré avec succès!')
-        return redirect(reverse('location_detail_mobile', args=[location.id]))
+        return redirect(reverse('location_mobile', args=[location.id]))
     else:
         return redirect(reverse('map_mobile'))
 
@@ -105,8 +105,11 @@ def locations_list_mobile(request):
     return render(request, 'dashboard_app/mobile/locations_list.html', context)
 
 
-def location_detail_mobile(request, location_id):
+def location_mobile(request, location_id):
     location = get_object_or_404(Location, pk=location_id)
+
+    last_item = Item.objects.filter(location_id=location_id).order_by('-id').first()
+    last_number = last_item.id + 1 if last_item else 1  # نبدأ من 1 إذا لم يكن هناك عناصر
 
     # Vérifier que les données GeoJSON sont analysées correctement
     try:
@@ -155,7 +158,15 @@ def location_detail_mobile(request, location_id):
         'location': location,
         'location_geojson': json.dumps(location_geojson),
         'items_geojson': items_geojson,
+        'last_number': last_number,
     })
+
+
+def get_last_item_number(request, location_id):
+    # Obtenir le dernier élément pour la localisation donnée
+    last_item = Item.objects.filter(location_id=location_id).order_by('-id').first()
+    last_number = last_item.id if last_item else 0  # Retourne 0 si aucun élément n'existe
+    return JsonResponse({'last_item_number': last_number})
 
 def add_item_mobile(request, location_id):
     location = get_object_or_404(Location, pk=location_id)
@@ -216,13 +227,13 @@ def add_item_mobile(request, location_id):
                     # في حالة فشل رفع الميديا، يمكن حذف العنصر إذا كان هذا مطلوبًا
                     item.delete()
                     messages.warning(request, "Échec de téléchargement des fichiers multimédias, élément non enregistré.")
-                    return redirect(reverse('location_detail_mobile', args=[location.id]))
+                    return redirect(reverse('location_mobile', args=[location.id]))
 
         messages.success(request, "L'élément et les fichiers multimédias ont été enregistrés avec succès!")
-        return redirect(reverse('location_detail_mobile', args=[location.id]))
+        return redirect(reverse('location_mobile', args=[location.id]))
 
     messages.warning(request, "Une erreur s'est produite lors de l'ajout de l'élément.")
-    return redirect(reverse('location_detail_mobile', args=[location.id]))
+    return redirect(reverse('location_mobile', args=[location.id]))
 
 def update_item_mobile(request, item_id):
     """
@@ -258,7 +269,7 @@ def update_item_mobile(request, item_id):
             # Vérifier que tous les champs obligatoires sont remplis
             if not name or not description:
                 messages.warning(request, 'Veuillez vérifier que tous les champs sont correctement remplis.')
-                return redirect(reverse('location_detail_mobile', args=[item.location.id]))
+                return redirect(reverse('location_mobile', args=[item.location.id]))
 
             # Mettre à jour les informations de l'élément
             item.name = name
@@ -321,7 +332,7 @@ def update_item_mobile(request, item_id):
             # Notification de succès après mise à jour
             messages.success(request, "L'élément et les médias ont été mis à jour avec succès!")
 
-            return redirect(reverse('location_detail_mobile', args=[item.location.id]))
+            return redirect(reverse('location_mobile', args=[item.location.id]))
 
     return JsonResponse({'success': False, 'message': 'Requête non valide.'})
 
@@ -383,16 +394,16 @@ def update_media_mobile(request, media_id):
                     messages.warning(request, f"Erreur lors de la suppression de l'ancien fichier: {e}")
 
             messages.success(request, "Le fichier média a été mis à jour avec succès!")
-            return redirect(reverse('location_detail_mobile', args=[media.item.location.id]))
+            return redirect(reverse('location_mobile', args=[media.item.location.id]))
 
         except Exception as e:
             messages.warning(request, f"Erreur lors du téléchargement du nouveau fichier: {e}")
-            return redirect(reverse('location_detail_mobile', args=[media.item.location.id]))
+            return redirect(reverse('location_mobile', args=[media.item.location.id]))
 
     else:
         messages.warning(request, 'Aucun nouveau fichier sélectionné pour la mise à jour.')
 
-    return redirect(reverse('location_detail_mobile', args=[media.item.location.id]))
+    return redirect(reverse('location_mobile', args=[media.item.location.id]))
 
 def delete_media_mobile(request, media_id):
     """
@@ -431,7 +442,7 @@ def delete_media_mobile(request, media_id):
         except Exception as e:
             messages.warning(request, f"Erreur lors de la suppression du fichier: {e}")
 
-        return redirect(reverse('location_detail_mobile', args=[location_id]))
+        return redirect(reverse('location_mobile', args=[location_id]))
 
     messages.warning(request, 'La méthode de commande est incorrecte.')
     return redirect('locations_mobile')
