@@ -326,31 +326,44 @@
             <!-- Formulaire de mise à jour des info -->
             <div id="viewDiv"></div>
 
+            
             <!-- Modal pour ajouter un nouvel élément avec la capture de caméra -->
             <div class="modal fade" id="CreateItemModal" tabindex="-1" aria-labelledby="CreateItemModalLabel" aria-hidden="true">
-                <div class="modal-dialog">
+                <div class="modal-dialog modal-fullscreen-lg-down">
                     <div class="modal-content">
                         <div class="modal-header">
-                            <h5 class="modal-title" id="CreateItemModalLabel">Ajouter un nouvel élément</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            <h5 class="modal-title" id="CreateItemModalLabel">Créer un élément</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
                         </div>
-                        <div class="modal-body">
-                            <form id="createItemForm">
-                                <input type="hidden" id="geojsonInput" name="geojson">
-                                <div class="mb-3">
-                                    <label for="itemName" class="form-label">Nom de l'élément</label>
-                                    <input type="text" class="form-control" id="itemName" name="name">
+                        <form method="POST" action="{% url 'add-item' location.id %}" enctype="multipart/form-data" style="background-color: #fff;">
+                            <div class="modal-body">
+                                {% csrf_token %}
+                                <div class="form-group mb-3">
+                                    <label for="itemName">Nom</label>
+                                    <input type="text" class="form-control" id="itemName" name="name" value="Élément {{ last_number }}" required />
                                 </div>
-                                <div class="mb-3">
-                                    <label for="itemDescription" class="form-label">Description</label>
-                                    <textarea class="form-control" id="itemDescription" name="description"></textarea>
+                                <div class="form-group mb-3">
+                                    <label for="itemDescription">Description</label>
+                                    <textarea class="form-control" id="itemDescription" name="description" placeholder="Description" required></textarea>
                                 </div>
-                                <button type="submit" class="btn btn-primary">Ajouter</button>
-                            </form>
-                        </div>
+                                <div class="form-group mb-3">
+                                    <div class="image-gallery" name="images"></div>
+                                    <button type="button" class="take-video-btn btn btn-warning mb-2">
+                                        <i class="fas fa-camera"></i> Capturer une image/vidéo
+                                    </button>
+                                    <input type="file" class="btn btn-outline-secondary form-control" name="media" id="imageInput" multiple accept="image/*,video/*" />
+                                </div>
+                                <input type="hidden" name="geojson" id="geojsonInput" />
+                            </div>
+                            <div class="modal-footer">
+                                <button type="submit" class="btn btn-primary">Enregistrer</button>
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             </div>
+
             
 
             <!-- Modal pour afficher les détails d'un élément -->
@@ -1048,54 +1061,29 @@
         });
     
         
-        let itemCounter = 0; // تعريف متغير عالمي itemCounter
-
-        $(document).ready(function() {
-            const locationId = '{{ location.id }}';
-
-            $.ajax({
-                url: `/get_last_item_number/${locationId}/`,
-                method: 'GET',
-                success: function(data) {
-                    itemCounter = data.last_item_number + 1; 
-                    console.log(`Updated itemCounter: ${itemCounter}`);
-                },
-                error: function(xhr, status, error) {
-                    console.error('Error fetching last item number:', error);
-                }
-            });
-
-            $('#addItemBtn').on('click', function() {
-                openCreateItemModal();
-            });
-
-            $('#createItemForm').on('submit', function(e) {
-                e.preventDefault();
-                const geojsonInput = $('#geojsonInput').val();
-                const nameInput = $('#itemName').val();
-                const descriptionInput = $('#descriptionInput').val();
-
-                $.post(`/add_item_mobile/${locationId}/`, {
-                    geojson: geojsonInput,
-                    name: nameInput,
-                    description: descriptionInput,
-                    media: $('input[type="file"]').prop('files')
-                }).done(function() {
-                    $('#CreateItemModal').modal('hide');
-                    location.reload(); // تحديث الصفحة بعد الإضافة
-                }).fail(function() {
-                    alert('فشل في إضافة العنصر.');
-                });
-            });
-        });
-
-        window.openCreateItemModal = function() {
-            const itemNameInput = document.getElementById('itemName');
-            if (itemNameInput) {
-                itemNameInput.value = `Élément ${itemCounter}`;
-            }
-            $('#CreateItemModal').modal('show');
+        
+        // Function to show the Create Item Modal
+        window.openCreateItemModal = function(geojson) {
+            // تحديث قيمة الحقل المخفي للـ GeoJSON
+            document.getElementById('geojsonInput').value = JSON.stringify(geojson);
+            
+            // استخدام Bootstrap لإظهار المودال
+            $('#CreateItemModal').modal('show'); // إظهار المودال باستخدام Bootstrap's JavaScript API
         };
+
+        // Function to close the Create Item Modal using Bootstrap's modal API
+        window.closeCreateItemModal = function() {
+            $('#CreateItemModal').modal('hide'); // Hide the modal using Bootstrap's API
+        };
+
+        // Event listener to handle the removal of the active graphic when the modal is fully hidden
+        $('#CreateItemModal').on('hidden.bs.modal', function () {
+            // Remove the active graphic from the graphics layer if it exists
+            if (activeGraphic && graphicsLayer) {
+                graphicsLayer.remove(activeGraphic);
+                activeGraphic = null; // Reset the activeGraphic variable after removal
+            }
+        });
     
         window.openViewItemModal = function(name, description, media) {
             // تحديث اسم المكان والوصف في الـ modal
@@ -1118,7 +1106,7 @@
     
                     // إضافة المحتوى بناءً على نوع الميديا (صورة أو فيديو)
                     const mediaContent = item.file_type === 'image'
-                        ? `<img src="${item.file_url}" class="d-block w-100" alt="Media Image" style="max-height: 200px;">`
+                        ? `<img src="${item.file_url}" class="d-block w-100" alt="Media Image" style="max-height: 60vh;border-radius: 15px;">`
                         : `<video controls class="d-block w-100" style="width: 100%;max-height: 400px;box-shadow: 1px 1px 5px 1px #eee;border-radius: 4px;">
                             <source src="${item.file_url}" type="video/mp4">
                         </video>`;

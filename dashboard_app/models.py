@@ -31,6 +31,7 @@ class Item(models.Model):
     location = models.ForeignKey(Location, on_delete=models.CASCADE, related_name='items')
     geojson = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    counter = models.IntegerField(default=1)
 
     def __str__(self):
         return f'{self.name} - {self.location.name}'

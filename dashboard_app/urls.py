@@ -8,7 +8,7 @@ urlpatterns = [
     path('map_mobile/', views.map_mobile, name='map_mobile'),
     path('save_location_mobile/', views.save_location_mobile, name='save_location_mobile'),
     path('locations_mobile/', views.locations_list_mobile, name='locations_list_mobile'),
-    path('location_mobile/<int:location_id>/', views.location_mobile, name='location_mobile'),
+    path('location_mobile/<int:location_id>/', views.location_detail_mobile, name='location_mobile'),
     path('item_mobile/<int:location_id>/add-item/', views.add_item_mobile, name='add_item_mobile'),
     path('item_mobile/<int:item_id>/update/', views.update_item_mobile, name='update_item_mobile'),
 
@@ -25,7 +25,6 @@ urlpatterns = [
     path('locations/', views.locations_list, name='locations-list'),
     path('location/<int:location_id>/', views.location_detail, name='location-detail'),
     path('location/<int:location_id>/add-item/', views.add_item, name='add-item'),
-    path('get_last_item_number/<int:location_id>/', views.get_last_item_number, name='get_last_item_number'),
 
     path('location/<int:location_id>/update/', views.update_location, name='update-location'),
     path('location/<int:location_id>/delete/', views.delete_location, name='delete-location'),

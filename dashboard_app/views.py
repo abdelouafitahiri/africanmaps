@@ -105,11 +105,12 @@ def locations_list_mobile(request):
     return render(request, 'dashboard_app/mobile/locations_list.html', context)
 
 
-def location_mobile(request, location_id):
+def location_detail_mobile(request, location_id):
     location = get_object_or_404(Location, pk=location_id)
 
-    last_item = Item.objects.filter(location_id=location_id).order_by('-id').first()
-    last_number = last_item.id + 1 if last_item else 1  # نبدأ من 1 إذا لم يكن هناك عناصر
+    last_item = Item.objects.filter(location_id=location_id).order_by('-counter').first()
+    last_number = last_item.counter + 1 if last_item else 1
+
 
     # Vérifier que les données GeoJSON sont analysées correctement
     try:
@@ -162,12 +163,6 @@ def location_mobile(request, location_id):
     })
 
 
-def get_last_item_number(request, location_id):
-    # Obtenir le dernier élément pour la localisation donnée
-    last_item = Item.objects.filter(location_id=location_id).order_by('-id').first()
-    last_number = last_item.id if last_item else 0  # Retourne 0 si aucun élément n'existe
-    return JsonResponse({'last_item_number': last_number})
-
 def add_item_mobile(request, location_id):
     location = get_object_or_404(Location, pk=location_id)
 
@@ -181,12 +176,19 @@ def add_item_mobile(request, location_id):
             return redirect(reverse('location-detail', args=[location.id]))
 
         # Créer et enregistrer le nouvel élément
+
+        last_counter = Item.objects.filter(location=location).order_by('-counter').first()
+        new_counter = (last_counter.counter + 1) if last_counter else 1
+
+        # إنشاء العنصر الجديد وتخزينه في قاعدة البيانات مع العداد
         item = Item.objects.create(
-            name=name,
+            name=name,  # تعيين الاسم حسب العداد
             description=description,
             location=location,
-            geojson=geojson
+            geojson=geojson,
+            counter=new_counter
         )
+
 
         # Traiter les fichiers multimédias
         media_files = request.FILES.getlist('media')
@@ -551,6 +553,8 @@ def locations_list(request):
 
 def location_detail(request, location_id):
     location = get_object_or_404(Location, pk=location_id)
+    last_item = Item.objects.filter(location_id=location_id).order_by('-counter').first()
+    last_number = last_item.counter + 1 if last_item else 1
 
     # Vérifier que les données GeoJSON sont analysées correctement
     try:
@@ -599,6 +603,7 @@ def location_detail(request, location_id):
         'location': location,
         'location_geojson': json.dumps(location_geojson),
         'items_geojson': items_geojson,
+        'last_number': last_number,
     })
 
 def save_location(request):
@@ -803,11 +808,16 @@ def add_item(request, location_id):
             return redirect(reverse('location-detail', args=[location.id]))
 
         # Créer et enregistrer le nouvel élément
+        last_counter = Item.objects.filter(location=location).order_by('-counter').first()
+        new_counter = (last_counter.counter + 1) if last_counter else 1
+
+        # إنشاء العنصر الجديد وتخزينه في قاعدة البيانات مع العداد
         item = Item.objects.create(
-            name=name,
+            name=name,  # تعيين الاسم حسب العداد
             description=description,
             location=location,
-            geojson=geojson
+            geojson=geojson,
+            counter=new_counter
         )
 
         # Traiter les fichiers multimédias
