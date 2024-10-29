@@ -394,8 +394,6 @@
                             </div>
                         </div>
                         <div class="modal-footer">
-                            <button type="button" id="editButton" class="btn btn-primary btn-sm d-none">Modifier</button>
-                            <button type="button" class="btn btn-danger btn-sm d-none" id="deleteButton" >Supprimer</button>
                             <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Fermer</button>
                         </div>
                     </div>
@@ -1106,7 +1104,7 @@
     
                     // إضافة المحتوى بناءً على نوع الميديا (صورة أو فيديو)
                     const mediaContent = item.file_type === 'image'
-                        ? `<img src="${item.file_url}" class="d-block w-100" alt="Media Image" style="max-height: 60vh;border-radius: 15px;">`
+                        ? `<img src="${item.file_url}" class="d-block w-100" alt="Media Image" style="height: 400px; object-fit: cover; border-radius: 15px;">`
                         : `<video controls class="d-block w-100" style="width: 100%;max-height: 400px;box-shadow: 1px 1px 5px 1px #eee;border-radius: 4px;">
                             <source src="${item.file_url}" type="video/mp4">
                         </video>`;
@@ -1230,14 +1228,17 @@
     
     
     
+    
+    
+
     // Function to show toast notifications
     function showBootstrapToast(message, type) {
         const toastHTML = `
             <div class="toast" role="alert" aria-live="assertive" aria-atomic="true">
-            <div class="toast-header">
-                <strong class="me-auto">AfricanMaps</strong>
-                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
-            </div>
+                <div class="toast-header">
+                    <strong class="me-auto">AfricanMaps</strong>
+                    <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
                 <div class="toast-body">
                     ${message}
                 </div>
@@ -1245,11 +1246,16 @@
         `;
         const toastContainer = document.getElementById('toastPlacement');
         toastContainer.insertAdjacentHTML('beforeend', toastHTML);
-    
+
         const toastElement = toastContainer.querySelector('.toast:last-child');
         const toastInstance = new bootstrap.Toast(toastElement);
         toastInstance.show();
-    
+
+        // Automatically hide the toast after 5 seconds
+        setTimeout(() => {
+            toastInstance.hide(); // Hide the toast
+        }, 5000); // 5000 milliseconds = 5 seconds
+
         toastElement.addEventListener('hidden.bs.toast', function () {
             toastElement.remove();
         });
