@@ -16,6 +16,7 @@ from django.db.models.functions import TruncMonth
 from .models import Location, Item, MediaModel
 import os
 import requests
+import httpx
 import boto3
 import uuid
 from slugify import slugify
@@ -1437,7 +1438,6 @@ def project_report(request):
     }
     return render(request, 'dashboard_app/web/project_report.html', context)
 
-
 def generate_location_word(request, location_id):
     """
     Cette vue génère un fichier ZIP contenant des documents Word pour chaque élément d'un emplacement donné.
@@ -1474,18 +1474,15 @@ def generate_location_word(request, location_id):
                 geojson_data = json.loads(element.geojson)  # Charger les données GeoJSON
                 geometry = geojson_data.get('geometry', {})
 
-                # Gérer les types de géométries
+                # Gérer les types de géométrie
                 if 'paths' in geometry:  # Probablement un LineString
                     paths = geometry.get('paths', [])
                     doc.add_heading("Type de Géométrie: LineString", level=1)
-                    if paths:
-                        for index, path in enumerate(paths):
-                            for point_index, point in enumerate(path):
-                                doc.add_paragraph(f"  Point {point_index + 1}: Longitude: {point[0]}, Latitude: {point[1]}")
-                    else:
-                        doc.add_paragraph("Données de chemin non trouvées.")
-
-                elif 'rings' in geometry: 
+                    for index, path in enumerate(paths):
+                        for point_index, point in enumerate(path):
+                            doc.add_paragraph(f"  Point {point_index + 1}: Longitude: {point[0]}, Latitude: {point[1]}")
+                
+                elif 'rings' in geometry:  # This is likely a Polygon
                     rings = geometry.get('rings', [])
                     doc.add_heading("Type de Géométrie: Polygon", level=1)
                     if rings:
@@ -1493,6 +1490,7 @@ def generate_location_word(request, location_id):
                             doc.add_paragraph(f"Anneau {ring_index + 1}:")
                             for point_index, point in enumerate(ring):
                                 if point_index == len(ring) - 1 and point == ring[0]:
+                                    # If this is the last point and is identical to the first point, label it as "Point 1"
                                     point_label = "Point 1 (Identique au Point de départ)"
                                 else:
                                     point_label = f"Point {point_index + 1}"
@@ -1500,15 +1498,13 @@ def generate_location_word(request, location_id):
                     else:
                         doc.add_paragraph("Données d'anneaux non trouvées pour le polygone.")
 
+                
                 elif 'x' in geometry and 'y' in geometry:  # Probablement un Point
-                    x = geometry['x']
-                    y = geometry['y']
+                    x, y = geometry['x'], geometry['y']
                     doc.add_heading("Type de Géométrie: Point", level=1)
                     doc.add_paragraph(f"Coordonnées (Longitude, Latitude): {x}, {y}")
-
                 else:
                     doc.add_paragraph("Type de géométrie non pris en charge ou données de géométrie non trouvées.")
-
             except (KeyError, json.JSONDecodeError) as e:
                 print(f"Erreur lors de l'analyse des données ArcGIS: {e}")
                 doc.add_paragraph("Erreur lors de l'analyse des données géographiques.")
@@ -1516,47 +1512,39 @@ def generate_location_word(request, location_id):
         # Ajouter les images et vidéos au document Word depuis DigitalOcean Spaces
         for media in element.media_files.all():
             try:
-                media_key = media.file_url.replace(f"https://{settings.AWS_S3_CUSTOM_DOMAIN}/", "")  # Chemin du fichier dans Spaces
                 media_url = media.file_url
+                response = requests.get(media_url)
+                if response.status_code == 200:
+                    media_data = BytesIO(response.content)
 
-                if media.file_url.endswith(('.png', '.jpg', '.jpeg', '.gif', '.webp', '.bmp')):
-                    # Télécharger l'image depuis Spaces
-                    image_data = s3.get_object(Bucket=settings.AWS_STORAGE_BUCKET_NAME, Key=media_key)['Body'].read()
-                    image_filename = os.path.basename(media_key)
-
-                    # Sauvegarder l'image temporairement pour l'ajouter au document Word
-                    with open(image_filename, 'wb') as temp_image:
-                        temp_image.write(image_data)
-                        doc.add_picture(image_filename, width=Inches(2))  # Ajouter l'image au document
-                        doc.add_paragraph(f"Image: {image_filename}")  # Ajouter le nom de l'image
-                    os.remove(image_filename)  # Supprimer le fichier temporaire
-
-                elif media.file_url.endswith(('.mp4', '.avi', '.mov')):
-                    doc.add_paragraph(f"Vidéo: {os.path.basename(media_key)}")  # Ajouter le nom de la vidéo
-                    doc.add_paragraph("Le fichier vidéo est inclus dans le fichier ZIP.")  # Mentionner que la vidéo est dans le zip
-
-                # Ajouter le fichier média au fichier zip
-                media_data = s3.get_object(Bucket=settings.AWS_STORAGE_BUCKET_NAME, Key=media_key)['Body'].read()
-                zf.writestr(f"{zip_subdir}/{element.name}/{os.path.basename(media_key)}", media_data)
-
+                    if media_url.endswith(('.png', '.jpg', '.jpeg', '.gif', '.webp', '.bmp')):
+                        doc.add_picture(media_data, width=Inches(2))
+                        doc.add_paragraph(f"Image: {os.path.basename(media.file_url)}")
+                    elif media_url.endswith(('.mp4', '.avi', '.mov')):
+                        doc.add_paragraph(f"Vidéo: {os.path.basename(media.file_url)}")
             except Exception as e:
-                print(f"Erreur lors de l'ajout du média: {e}")
+                print(f"Erreur média: {e}")
 
-        # Sauvegarder le document Word en mémoire (sans l'enregistrer sur le serveur)
+        # Sauvegarder le document Word en mémoire et l'ajouter au fichier ZIP
         doc_io = BytesIO()
         doc.save(doc_io)
         doc_io.seek(0)
+        zf.writestr(f"{zip_subdir}/{element.name}.docx", doc_io.read())
 
-        # Ajouter le document Word au fichier zip avec un nom de fichier unique
-        zf.writestr(f"{zip_subdir}/{element.name}_{element.id}.docx", doc_io.read())
+        # Ajouter les fichiers médias (images et vidéos) au ZIP
+        for media in element.media_files.all():
+            try:
+                media_url = media.file_url
+                response = requests.get(media_url)
+                if response.status_code == 200:
+                    zf.writestr(f"{zip_subdir}/{element.name}/{os.path.basename(media.file_url)}", response.content)
+            except Exception as e:
+                print(f"Erreur fichier ZIP: {e}")
 
-    # Fermer le fichier zip après avoir ajouté tous les fichiers
+    # Finaliser le fichier ZIP et le renvoyer comme réponse
     zf.close()
-
-    # Préparer la réponse pour télécharger directement le fichier zip
-    response = HttpResponse(s.getvalue(), content_type="application/x-zip-compressed")
-    response['Content-Disposition'] = f'attachment; filename="{zip_filename}"'
-
+    response = HttpResponse(s.getvalue(), content_type='application/zip')
+    response['Content-Disposition'] = f'attachment; filename={zip_filename}'
     return response
 
 def elements_rapport(request):
@@ -1697,7 +1685,7 @@ def elements_rapport(request):
             doc_io = BytesIO()
             doc.save(doc_io)
             doc_io.seek(0)
-            zf.writestr(f"{zip_subdir}/{item.name}_{item.id}.docx", doc_io.read())
+            zf.writestr(f"{zip_subdir}/{item.name}.docx", doc_io.read())
 
             # Ajouter les fichiers médias (images et vidéos) au ZIP
             for media in item.media_files.all():
@@ -2155,7 +2143,6 @@ def generate_location_kml(request, location_id):
         print(f"Erreur lors de l'exportation du fichier KML vers DigitalOcean Spaces: {e}")
         return HttpResponse("Une erreur s'est produite lors de l'exportation du fichier KML.", status=500)
 
-
 def generate_location_kmz(request, location_id):
     """
     Cette vue génère un fichier KMZ pour un emplacement spécifique et inclut les fichiers médias dans le KMZ.
@@ -2285,7 +2272,6 @@ def generate_location_kmz(request, location_id):
     except Exception as e:
         print(f"Erreur lors de l'exportation du fichier KMZ vers DigitalOcean Spaces: {e}")
         return HttpResponse("Une erreur s'est produite lors de l'exportation du fichier KMZ.", status=500)
-
 
 def user_list(request):
     """Liste tous les utilisateurs."""
