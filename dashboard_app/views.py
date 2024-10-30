@@ -17,6 +17,7 @@ from .models import Location, Item, MediaModel
 import os
 import requests
 import boto3
+from slugify import slugify
 import psutil
 import json
 import zipfile
@@ -162,8 +163,11 @@ def location_detail_mobile(request, location_id):
         'last_number': last_number,
     })
 
-
 def add_item_mobile(request, location_id):
+    """
+    Cette vue permet d'ajouter un nouvel élément (Item) dans une location donnée.
+    Elle gère le téléchargement des fichiers multimédias associés à cet élément.
+    """
     location = get_object_or_404(Location, pk=location_id)
 
     if request.method == 'POST':
@@ -176,25 +180,22 @@ def add_item_mobile(request, location_id):
             return redirect(reverse('location-detail', args=[location.id]))
 
         # Créer et enregistrer le nouvel élément
-
         last_counter = Item.objects.filter(location=location).order_by('-counter').first()
         new_counter = (last_counter.counter + 1) if last_counter else 1
 
-        # إنشاء العنصر الجديد وتخزينه في قاعدة البيانات مع العداد
+        # Créer l'élément et le sauvegarder dans la base de données
         item = Item.objects.create(
-            name=name,  # تعيين الاسم حسب العداد
+            name=name,
             description=description,
             location=location,
             geojson=geojson,
             counter=new_counter
         )
 
-
         # Traiter les fichiers multimédias
         media_files = request.FILES.getlist('media')
-
         if media_files:
-            # إعداد عميل boto3
+            # Initialiser le client boto3 pour DigitalOcean Spaces
             s3 = boto3.client(
                 's3',
                 region_name='lon1',
@@ -205,10 +206,10 @@ def add_item_mobile(request, location_id):
 
             for media in media_files:
                 try:
-                    # إنشاء اسم فريد للملف
+                    # Créer un nom unique pour le fichier
                     unique_filename = f"uploads/{item.location.name}/{item.name}/{media.name}"
-
-                    # رفع الملف إلى DigitalOcean Spaces
+                    
+                    # Télécharger le fichier sur DigitalOcean Spaces
                     s3.upload_fileobj(
                         media,
                         settings.AWS_STORAGE_BUCKET_NAME,
@@ -216,18 +217,17 @@ def add_item_mobile(request, location_id):
                         ExtraArgs={'ACL': 'public-read'}
                     )
 
-                    # إنشاء رابط مباشر للملف
+                    # Créer un lien direct pour le fichier
                     media_url = f"https://{settings.AWS_S3_CUSTOM_DOMAIN}/africanmaps/{unique_filename}"
 
-                    # حفظ رابط الملف في قاعدة البيانات
+                    # Sauvegarder le lien du fichier dans la base de données
                     MediaModel.objects.create(item=item, file_url=media_url)
 
                     print(f"Fichier téléchargé : {media.name}")
 
                 except Exception as e:
                     print(f"Erreur lors du téléchargement du fichier {media.name} : {e}")
-                    # في حالة فشل رفع الميديا، يمكن حذف العنصر إذا كان هذا مطلوبًا
-                    item.delete()
+                    item.delete()  # Supprimer l'élément en cas d'échec
                     messages.warning(request, "Échec de téléchargement des fichiers multimédias, élément non enregistré.")
                     return redirect(reverse('location_mobile', args=[location.id]))
 
@@ -236,6 +236,7 @@ def add_item_mobile(request, location_id):
 
     messages.warning(request, "Une erreur s'est produite lors de l'ajout de l'élément.")
     return redirect(reverse('location_mobile', args=[location.id]))
+
 
 def update_item_mobile(request, item_id):
     """
@@ -267,6 +268,7 @@ def update_item_mobile(request, item_id):
             name = request.POST.get('name')
             description = request.POST.get('description')
             media_files = request.FILES.getlist('media')
+            print(media_files)
 
             # Vérifier que tous les champs obligatoires sont remplis
             if not name or not description:
@@ -291,41 +293,27 @@ def update_item_mobile(request, item_id):
             for media in media_files:
                 try:
                     # Créer un nom de fichier unique pour l'espace de stockage
-                    unique_filename = f"uploads/{item.location.name}/{item.name}/{media.name}"
-
+                    unique_filename = f"uploads/{item.location.name}/{item.name.replace(' ', '_')}/{media.name.replace(' ', '_')}"  # Remplace les espaces
                     # Télécharger le fichier vers DigitalOcean Spaces
                     s3.upload_fileobj(
-                        media,  # fichier en mémoire
-                        settings.AWS_STORAGE_BUCKET_NAME,  # nom du bucket
-                        unique_filename,  # chemin et nom du fichier
+                        media,
+                        settings.AWS_STORAGE_BUCKET_NAME,
+                        unique_filename,
                         ExtraArgs={'ACL': 'public-read'}  # rendre le fichier public
                     )
 
                     # Créer l'URL du fichier téléchargé
                     media_url = f"https://{settings.AWS_S3_CUSTOM_DOMAIN}/africanmaps/{unique_filename}"
-
-                    # Analyser l'angle pour les images
-                    capture_angle = None
-                    plot_url = None
-                    if media.content_type.startswith('image/'):
-                        angle_info = analyze_image_angle(media_url)
-                        if "error" in angle_info:
-                            messages.warning(request, angle_info["error"])
-                        else:
-                            capture_angle = angle_info.get("mean_angle")
-
-                            # Créer et sauvegarder le graphique de l'angle
-                            plot_filename = f'plots/plot_angle_{capture_angle:.2f}.png'
-                            plot_url = f"https://{settings.AWS_S3_CUSTOM_DOMAIN}/africanmaps/{plot_filename}"
-                            create_angle_plot(capture_angle, plot_url)  # utilise le chemin pour la sauvegarde sur Spaces
+                    print(media_url)
 
                     # Sauvegarder les détails du fichier multimédia dans la base de données
                     MediaModel.objects.create(
                         item=item,
-                        file=media_url,
-                        capture_angle=capture_angle,
-                        plot_image=plot_url
+                        file_url=media_url,
+                        capture_angle=None,  # Remplissez avec vos données d'angle si nécessaire
+                        plot_image_url=None   # Remplissez avec vos données d'image de tracé si nécessaire
                     )
+
                     print(f"Fichier téléchargé : {media.name}")
 
                 except Exception as e:
@@ -333,7 +321,6 @@ def update_item_mobile(request, item_id):
 
             # Notification de succès après mise à jour
             messages.success(request, "L'élément et les médias ont été mis à jour avec succès!")
-
             return redirect(reverse('location_mobile', args=[item.location.id]))
 
     return JsonResponse({'success': False, 'message': 'Requête non valide.'})
@@ -805,7 +792,12 @@ def create_angle_plot(angle, save_path):
     plt.savefig(save_path)
     plt.close(fig)
 
+
 def add_item(request, location_id):
+    """
+    Cette vue permet d'ajouter un nouvel élément (Item) dans une location donnée.
+    Elle gère le téléchargement des fichiers multimédias associés à cet élément.
+    """
     location = get_object_or_404(Location, pk=location_id)
 
     if request.method == 'POST':
@@ -821,9 +813,9 @@ def add_item(request, location_id):
         last_counter = Item.objects.filter(location=location).order_by('-counter').first()
         new_counter = (last_counter.counter + 1) if last_counter else 1
 
-        # إنشاء العنصر الجديد وتخزينه في قاعدة البيانات مع العداد
+        # Créer l'élément dans la base de données
         item = Item.objects.create(
-            name=name,  # تعيين الاسم حسب العداد
+            name=name,
             description=description,
             location=location,
             geojson=geojson,
@@ -833,7 +825,7 @@ def add_item(request, location_id):
         # Traiter les fichiers multimédias
         media_files = request.FILES.getlist('media')
         if media_files:
-            # إعداد عميل boto3
+            # Initialiser le client boto3
             s3 = boto3.client(
                 's3',
                 region_name='lon1',
@@ -844,10 +836,9 @@ def add_item(request, location_id):
 
             for media in media_files:
                 try:
-                    # إنشاء اسم فريد للملف
-                    unique_filename = f"uploads/{item.location.name}/{item.name}/{media.name}"
-
-                    # رفع الملف إلى DigitalOcean Spaces
+                    # Créer un nom de fichier unique pour l'espace de stockage
+                    unique_filename = f"uploads/{item.location.name}/{item.name.replace(' ', '_')}/{media.name.replace(' ', '_')}"
+                    # Télécharger le fichier vers DigitalOcean Spaces
                     s3.upload_fileobj(
                         media,
                         settings.AWS_STORAGE_BUCKET_NAME,
@@ -855,19 +846,18 @@ def add_item(request, location_id):
                         ExtraArgs={'ACL': 'public-read'}
                     )
 
-                    # إنشاء رابط مباشر للملف
+                    # Créer l'URL du fichier téléchargé
                     media_url = f"https://{settings.AWS_S3_CUSTOM_DOMAIN}/africanmaps/{unique_filename}"
-
-                    # حفظ رابط الملف في قاعدة البيانات
+                    # Sauvegarder le lien dans la base de données
                     MediaModel.objects.create(item=item, file_url=media_url)
 
                     print(f"Fichier téléchargé : {media.name}")
 
                 except Exception as e:
                     print(f"Erreur lors du téléchargement du fichier {media.name} : {e}")
-                    # في حالة فشل رفع الميديا، يمكن حذف العنصر إذا كان هذا مطلوبًا
+                    # En cas d'échec du téléchargement, supprimer l'élément si nécessaire
                     item.delete()
-                    messages.warning(request, "Échec de téléchargement des fichiers multimédias, élément non enregistré.")
+                    messages.warning(request, "Échec du téléchargement des fichiers multimédias, élément non enregistré.")
                     return redirect(reverse('location-detail', args=[location.id]))
 
         messages.success(request, "L'élément et les fichiers multimédias ont été enregistrés avec succès!")
@@ -931,41 +921,27 @@ def update_item(request, item_id):
             for media in media_files:
                 try:
                     # Créer un nom de fichier unique pour l'espace de stockage
-                    unique_filename = f"uploads/{item.location.name}/{item.name}/{media.name}"
-
+                    unique_filename = f"uploads/{item.location.name}/{item.name.replace(' ', '_')}/{media.name.replace(' ', '_')}"  # Remplace les espaces
                     # Télécharger le fichier vers DigitalOcean Spaces
                     s3.upload_fileobj(
-                        media,  # fichier en mémoire
-                        settings.AWS_STORAGE_BUCKET_NAME,  # nom du bucket
-                        unique_filename,  # chemin et nom du fichier
+                        media,
+                        settings.AWS_STORAGE_BUCKET_NAME,
+                        unique_filename,
                         ExtraArgs={'ACL': 'public-read'}  # rendre le fichier public
                     )
 
                     # Créer l'URL du fichier téléchargé
                     media_url = f"https://{settings.AWS_S3_CUSTOM_DOMAIN}/africanmaps/{unique_filename}"
-
-                    # Analyser l'angle pour les images
-                    capture_angle = None
-                    plot_url = None
-                    if media.content_type.startswith('image/'):
-                        angle_info = analyze_image_angle(media_url)
-                        if "error" in angle_info:
-                            messages.warning(request, angle_info["error"])
-                        else:
-                            capture_angle = angle_info.get("mean_angle")
-
-                            # Créer et sauvegarder le graphique de l'angle
-                            plot_filename = f'plots/plot_angle_{capture_angle:.2f}.png'
-                            plot_url = f"https://{settings.AWS_S3_CUSTOM_DOMAIN}/africanmaps/{plot_filename}"
-                            create_angle_plot(capture_angle, plot_url)  # utilise le chemin pour la sauvegarde sur Spaces
+                    print(media_url)
 
                     # Sauvegarder les détails du fichier multimédia dans la base de données
                     MediaModel.objects.create(
                         item=item,
-                        file=media_url,
-                        capture_angle=capture_angle,
-                        plot_image=plot_url
+                        file_url=media_url,
+                        capture_angle=None,  # Remplissez avec vos données d'angle si nécessaire
+                        plot_image_url=None   # Remplissez avec vos données d'image de tracé si nécessaire
                     )
+
                     print(f"Fichier téléchargé : {media.name}")
 
                 except Exception as e:
@@ -973,10 +949,10 @@ def update_item(request, item_id):
 
             # Notification de succès après mise à jour
             messages.success(request, "L'élément et les médias ont été mis à jour avec succès!")
-
             return redirect(reverse('location-detail', args=[item.location.id]))
 
     return JsonResponse({'success': False, 'message': 'Requête non valide.'})
+
 
 def delete_item(request, item_id):
     """Supprimer un élément spécifique."""

@@ -393,7 +393,7 @@
                             </div>
                         </div>
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Fermer</button>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
                         </div>
                     </div>
                 </div>
@@ -403,14 +403,13 @@
             <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
                 <div class="modal-dialog modal-fullscreen-lg-down">
                     <div class="modal-content">
-                        <form id="edit-form" method="POST" enctype="multipart/form-data"></form>
-                        <div class="modal-header">
-                            <h5 class="modal-title" id="editModalLabel">Modifier l'élément</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
-                        </div>
-                        <div class="modal-body">
-                            
-                                {% csrf_token %}
+                        <form id="edit-form" method="POST" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="editModalLabel">Modifier l'élément</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+                            </div>
+                            <div class="modal-body">
                                 <input type="hidden" id="edit-item-id" name="item_id">
                                 <div class="form-group mb-3">
                                     <label for="edit-name">Nom :</label>
@@ -421,23 +420,20 @@
                                     <textarea class="form-control" id="edit-description" name="description" required></textarea>
                                 </div>
                                 <div class="form-group mb-3">
-                                    <button type="button" class="take-video-btn btn btn-warning mb-2" hidden>
-                                        <i class="fas fa-camera"></i> Capturer une image/vidéo
-                                    </button>
                                     <input type="file" class="btn btn-outline-secondary form-control" name="media" id="imageInput" multiple accept="image/*,video/*" />
                                     <div class="image-gallery mt-3" name="images"></div>
                                 </div>
                                 <input type="hidden" id="edit-geojson" name="geojson">
-                           
-                        </div>
-                        <div class="modal-footer">
-                            <button type="submit" class="btn btn-primary">Enregistrer</button>
-                            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Fermer</button>
-                        </div>
-                    </div>
-                </form>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="submit" class="btn btn-primary">Enregistrer</button>
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                            </div>
+                        </form>
+                    </div>             
                 </div>
             </div>
+
 
             <!-- Modal pour supprimer un élément -->
             <div class="modal fade" id="deleteItemModal" tabindex="-1" aria-labelledby="deleteItemModalLabel" aria-hidden="true">
@@ -1143,32 +1139,32 @@
             $('#viewItemModal').modal('hide'); // إغلاق المودال باستخدام Bootstrap API
         };
     
+        
         window.openEditModal = function(itemId, name, description, geojsonStr) {
             try {
-                // التحقق مما إذا كانت geojsonStr معرفة وليست فارغة
+                // Vérifier si geojsonStr est défini et non vide
                 let geojson;
                 if (geojsonStr) {
-                    // تحويل geojsonStr إلى كائن JavaScript
                     geojson = JSON.parse(geojsonStr.replace(/&quot;/g, '"'));
                     document.getElementById('edit-geojson').value = JSON.stringify(geojson);
                 } else {
-                    console.warn('geojsonStr is undefined or empty');
+                    console.warn('geojsonStr est indéfini ou vide');
                     document.getElementById('edit-geojson').value = '';
                 }
-    
-                // إعداد البيانات داخل المودال
+        
+                // Remplir les champs du modal
                 document.getElementById('edit-name').value = name || '';
                 document.getElementById('edit-description').value = description || '';
                 document.getElementById('edit-item-id').value = itemId;
-    
-                // تعديل عنوان الـ form ليتوافق مع العملية المطلوبة
+        
+                // Modifier l'action du formulaire pour qu'elle corresponde à l'opération souhaitée
                 document.getElementById('edit-form').action = `/item/${itemId}/update/`;
-    
-                // عرض المودال باستخدام Bootstrap
+        
+                // Afficher le modal avec Bootstrap
                 $('#editModal').modal('show');
             } catch (error) {
-                console.error('خطأ في geojsonStr:', geojsonStr, error);
-                showBootstrapToast('Une erreur s \'est produite lors du traitement des données. Assurez-vous que les valeurs sont correctes.', 'danger');
+                console.error('Erreur dans geojsonStr:', geojsonStr, error);
+                showBootstrapToast('Une erreur s\'est produite lors du traitement des données. Assurez-vous que les valeurs sont correctes.', 'danger');
             }
         };
     
@@ -1226,10 +1222,6 @@
     });
     
     
-    
-    
-    
-
     // Function to show toast notifications
     function showBootstrapToast(message, type) {
         const toastHTML = `
@@ -1259,8 +1251,6 @@
             toastElement.remove();
         });
     }
-    
-    
         
     // Function to add media files (image/video) to the input field and the gallery
     function addMediaToInput(file) {
