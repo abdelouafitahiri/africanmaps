@@ -1,0 +1,587 @@
+{% load static %}
+<!DOCTYPE HTML>
+<html lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <title>Gérer les Projets</title>
+    <link rel="stylesheet" type="text/css" href="{% static 'mobile/fonts/bootstrap-icons.css' %}">
+    <link href="{% static 'web/assets/css/bootstrap.min.css' %}" rel="stylesheet" type="text/css" />
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="{% static 'mobile/scripts_mobile/bootstrap.min.js' %}"></script>
+    <link href="{% static 'web/assets/css/app.min.css' %}" rel="stylesheet" type="text/css" />
+
+    <link href="{% static 'web/assets/libs/mobius1-selectr/selectr.min.css' %}" rel="stylesheet" type="text/css" />
+    <link href="{% static 'web/assets/css/icons.min.css' %}" rel="stylesheet" type="text/css" />
+    <link href="{% static 'web/assets/css/esri_main.css' %}" rel="stylesheet" type="text/css" />
+    <script src="https://js.arcgis.com/4.30/"></script>
+
+
+</head>
+<body class="">
+
+<style>
+
+.pagination {
+    margin-bottom: 100px !important; /* هذه القيمة تحدد المسافة السفلية بين pagination والفوتر */
+}
+
+#footer-bar {
+    z-index: 10;
+}
+
+.esri-basemap-gallery__item-container {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+.offline-message,.online-message {
+    position: fixed;
+    transform: translateY(300%);
+    padding-bottom: 0;
+    font-weight: 700;
+    font-family: "Varela Round",sans-serif;
+    transition: all 350ms ease;
+    bottom: 10px;
+    left: 10px;
+    right: 10px;
+    z-index: 95;
+    padding-left: 15px;
+    border-radius: 12px;
+    line-height: 50px
+}
+
+.offline-message-active,.online-message-active {
+    transform: translateY(calc(-70px + (constant(safe-area-inset-bottom))));
+    transform: translateY(calc(-70px + (env(safe-area-inset-bottom))))
+}
+
+#footer-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 98;
+    backdrop-filter: saturate(180%) blur(10px);
+    -webkit-backdrop-filter: saturate(180%) blur(10px);
+    background: rgba(255,255,255,1);
+    box-shadow: 0 -5px 5px 0 rgba(0,0,0,.04);
+    height: 65px;
+    display: flex;
+    text-align: center
+}
+
+#footer-bar a:not(.btn) {
+    padding-top: 12px;
+    position: relative;
+    flex: 1 1 auto;
+    color: #1f1f1f
+}
+
+#footer-bar a:not(.btn) span {
+    position: relative;
+    z-index: 2;
+    display: block;
+    font-size: 10px;
+    font-weight: 500;
+    margin-top: -3px;
+    opacity: .7;
+    font-family: "Varela Round",sans-serif!important
+}
+
+#footer-bar a:not(.btn) i {
+    margin-top: 2px;
+    display: block;
+    font-size: 18px;
+    position: relative;
+    z-index: 2
+}
+
+#footer-bar .badge {
+    height: 15px;
+    min-width: 15px;
+    line-height: 16px;
+    font-size: 8px;
+    font-style: normal;
+    border-radius: 15px;
+    text-align: center;
+    padding: 0;
+    position: absolute;
+    top: 8px;
+    margin-right: -5px;
+    z-index: 3
+}
+
+#footer-bar .badge-text {
+    padding: 0 5px
+}
+
+.footer-clear {
+    padding-bottom: calc(100px + env(safe-area-inset-bottom))!important
+}
+
+.iosTabBar {
+    height: 65px!important;
+    transform: translateY(env(safe-area-inset-bottom))
+}
+
+#footer-bar.position-relative {
+    z-index: 90!important
+}
+
+.footer-bar-no-text i {
+    padding-top: 8px
+}
+
+#footer-bar .circle-nav-1 * {
+    color: #fff!important
+}
+
+#footer-bar .circle-nav-1::after {
+    position: absolute;
+    content: "";
+    width: 60px;
+    height: 60px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%,-50%);
+    border-radius: 100%
+}
+
+#footer-bar .circle-nav-2 i {
+    color: #fff!important;
+    transform: translateY(-18px);
+    font-size: 20px!important
+}
+
+#footer-bar .circle-nav-2::after {
+    position: absolute;
+    content: "";
+    width: 50px;
+    height: 50px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%,-50%);
+    margin-top: -25px;
+    border-radius: 10px;
+    z-index: -1
+}
+
+#footer-bar .circle-nav-2::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 50px;
+    height: 50px;
+    margin-top: -25px;
+    margin-left: -5px;
+    border-radius: 20px;
+    background: inherit;
+    z-index: -1;
+    transform: scale(.75) translate(-55%,-45%);
+    filter: blur(8px)
+}
+
+#footer-bar .btn {
+    margin: 0 10px;
+    margin-top: 15px;
+    font-size: 12px;
+    height: 35px;
+    line-height: 25px;
+    padding: 5px 15px
+}
+
+.footer-bar-1 span {
+    transform: translateY(2px)
+}
+
+.footer-bar-1 i {
+    transform: translateY(-2px)
+}
+
+.footer-bar-1.footer-bar-no-text .circle-nav-1 i {
+    font-size: 20px!important;
+    transform: translateY(-2px)!important
+}
+
+.footer-bar-3 .active-nav i,.footer-bar-3 .active-nav span {
+    transform: translateY(-3px)
+}
+
+.footer-bar-4 .active-nav * {
+    color: #fff!important
+}
+
+.footer-bar-detached {
+    border-radius: 15px;
+    left: 7px!important;
+    right: 7px!important;
+    bottom: 15px!important;
+    box-shadow: 0 0 15px 0 rgba(0,0,0,.1)!important
+}
+
+#footer-bar:not(.iosTabBar) {
+    bottom: 15px!important
+}
+
+
+</style>
+
+    <!-- Container for Bootstrap Toasts -->
+
+    <div class="toast-container position-fixed p-3" id="toastPlacement" style="z-index: 9999; bottom: 15vh; left: 50%; transform: translateX(-50%);"></div>
+    
+    {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm border-theme-white-2" role="alert">
+            <div class="d-inline-flex justify-content-center align-items-center thumb-xs 
+                {% if message.tags == 'success' %} bg-success
+                {% elif message.tags == 'danger' %} bg-danger
+                {% elif message.tags == 'warning' %} bg-warning
+                {% elif message.tags == 'info' %} bg-purple
+                {% else %} bg-secondary {% endif %} 
+                rounded-circle mx-auto me-1">
+                <i class="fas 
+                    {% if message.tags == 'success' %} fa-check
+                    {% elif message.tags == 'danger' %} fa-xmark
+                    {% elif message.tags == 'warning' %} fa-exclamation
+                    {% elif message.tags == 'info' %} fa-info
+                    {% else %} fa-info {% endif %}
+                    align-self-center mb-0 text-white"></i>
+            </div>
+            {{ message|safe }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+    {% endif %}
+    <script>
+        // Set a timeout to automatically close the alert after 15 seconds (15000 milliseconds)
+        setTimeout(function() {
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(function(alert) {
+                alert.classList.remove('show');
+                alert.classList.add('fade');
+                setTimeout(function() {
+                    alert.remove();
+                }, 500); // Delay for fade-out animation
+            });
+        }, 10000);
+    </script>
+
+
+       
+    <div id="page" style="display: block;margin-bottom: 20vh;">
+
+        <div class="card mb-4">
+            <div class="card-body">
+                <form method="get" action="">
+                    <div class="row g-2">
+                        <div class="col-6 col-md-3">
+                            <label for="month" class="form-label">Mois:</label>
+                            <select id="month" name="month" class="form-select">
+                                <option value="">Choisir le mois</option>
+                                <option value="1">Janvier</option>
+                                <option value="2">Février</option>
+                                <option value="3">Mars</option>
+                                <option value="4">Avril</option>
+                                <option value="5">Mai</option>
+                                <option value="6">Juin</option>
+                                <option value="7">Juillet</option>
+                                <option value="8">Août</option>
+                                <option value="9">Septembre</option>
+                                <option value="10">Octobre</option>
+                                <option value="11">Novembre</option>
+                                <option value="12">Décembre</option>
+                            </select>
+                        </div>
+        
+                        <div class="col-6 col-md-3">
+                            <label for="year" class="form-label">Année:</label>
+                            <select id="year" name="year" class="form-select">
+                                <option value="">Choisir l'année</option>
+                                <option value="2020">2020</option>
+                                <option value="2021">2021</option>
+                                <option value="2022">2022</option>
+                                <option value="2023">2023</option>
+                                <option value="2024">2024</option>
+                            </select>
+                        </div>
+        
+                        <div class="col-6 col-md-3">
+                            <label for="archived" class="form-label">État:</label>
+                            <select id="archived" name="archived" class="form-select">
+                                <option value="">Tous les projets</option>
+                                <option value="archived">Archivé</option>
+                                <option value="non_archived">Non Archivé</option>
+                            </select>
+                        </div>
+        
+                        <div class="col-6 col-md-3 align-self-end">
+                            <button type="submit" class="btn btn-primary w-100">Filtrer</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+
+        <!-- Liste des projets -->
+        <div class="row">                        
+          {% for location in page_obj %}    
+          <div class="col-6 col-md-6 col-lg-4">
+            <div class="card position-relative">
+                <div class="card-body">
+                    <!-- Statut du projet en haut à gauche -->
+                    <div class="d-flex justify-content-end align-items-center position-absolute top-0 end-0 mt-3 me-2">
+                        <!-- Statut du projet -->
+                        {% if location.archived %}
+                            <span class="badge rounded-pill border border-danger text-danger p-1 me-2">
+                                Statut : Archivé
+                            </span>
+                        {% else %}
+                            <span class="badge rounded-pill border border-success text-success p-1 me-2">
+                                Statut : Actif
+                            </span>
+                        {% endif %}
+        
+                        <!-- Dropdown pour l'archivage/déarchivage -->
+                        <div class="dropdown">
+                            <button class="btn btn-outline-secondary rounded-circle p-0" type="button" id="archiveDropdown{{ location.id }}" data-bs-toggle="dropdown" aria-expanded="false" style="width: 28px; height: 28px;">
+                                <i class="fas fa-ellipsis-h" style="font-size: 16px;margin-top: 4px;"></i> <!-- Icone pour les actions (FontAwesome) -->
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="archiveDropdown{{ location.id }}">
+                                <li>
+                                    <a href="#" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#editModal{{ location.id }}">
+                                        <i class="iconoir-edit text-primary me-2"></i> Modifier
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="#" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#deleteModal{{ location.id }}">
+                                        <i class="iconoir-multiple-pages-xmark text-danger me-2"></i> Supprimer
+                                    </a>    
+                                </li>                            
+                                
+                                {% if location.archived %}
+                                    <li>
+                                        <a class="dropdown-item" href="{% url 'toggle-archive-location' location.id %}">
+                                            <i class="iconoir-folder-minus text-warning me-2"></i> <span class="text-warning">Désarchiver</span>
+                                        </a>
+                                    </li>
+                                {% else %}
+                                    <li>
+                                        <a class="dropdown-item" href="{% url 'toggle-archive-location' location.id %}">
+                                            <i class="iconoir-archive text-secondary me-2"></i> <span class="text-secondary">Archiver</span>
+                                        </a>
+                                    </li>
+                                {% endif %}                            
+                            </ul>
+                        </div>
+                </div>
+        
+                            
+                    <!-- Détails du projet -->
+                    <div class="text-center border-dashed-bottom pb-3">
+                        <i class="iconoir-apple-shortcuts" style="font-size:70px;color:#224d2f;margin-top: 35px;"></i>
+                        <h5 class="fw-bold my-2 fs-20">{{ location.name }}</h5>
+                        <p class="text-muted mt-3 mb-0">{{ location.description|truncatechars:100 }}</p>
+                    </div>
+
+            
+                    <!-- Actions du projet en bas -->
+                    <div class="d-flex justify-content-center fw-semibold align-items-center mt-3">
+                        <a href="{% url 'location_mobile' location.id %}" class="btn rounded-pill btn-outline-primary w-100 mt-2">
+                            Détails du projet
+                        </a>
+                    </div>
+
+                    <!-- Modal pour la mise à jour des informations -->
+                    <div class="modal fade" id="editModal{{ location.id }}" tabindex="-1" role="dialog" aria-labelledby="editModalLabel{{ location.id }}" aria-hidden="true">
+                        <div class="modal-dialog modal-fullscreen-lg-down" role="document">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h6 class="modal-title m-0" id="editModalLabel{{ location.id }}">Mettre à jour les informations</h6>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" onclick="deleteGraphicAndClose()"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <form method="POST" enctype="multipart/form-data" action="{% url 'update-location' location.id %}">
+                                        {% csrf_token %}
+                                        <input hidden type="text" id="geojsonData{{ location.id }}" name="geojson" value="{{ location.geojson }}" placeholder="Données GeoJSON" class="form-control mb-2" />
+                                        <input type="text" id="featureName{{ location.id }}" name="name" value="{{ location.name }}" placeholder="Nom" required class="form-control mb-2" />
+                                        <textarea id="featureDescription{{ location.id }}" name="description" placeholder="Description" rows="3" required class="form-control mb-2">{{ location.description }}</textarea>
+                                        <button type="submit" class="btn btn-primary">Mettre à jour</button>
+                                    </form>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal" onclick="deleteGraphicAndClose()">Fermer</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <!-- Modal for delete confirmation -->
+                    <div class="modal fade" id="deleteModal{{ location.id }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ location.id }}" aria-hidden="true">
+                        <div class="modal-dialog modal-fullscreen-lg-down">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="deleteModalLabel{{ location.id }}">Confirmation de suppression</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    Êtes-vous sûr de vouloir supprimer ce projet ?
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Annuler</button>
+                                    <a href="{% url 'delete-location' location.id %}" class="btn btn-danger btn-sm">Supprimer</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+
+
+                </div><!--end card-body-->
+            </div><!--end card-->
+                                      
+          </div> <!--end col-->
+          {% endfor %}
+        </div>
+
+
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="Précédent">
+                        <span aria-hidden="true">«</span>
+                        <span class="sr-only">Précédent</span>
+                    </a>
+                </li>
+            {% else %}
+                <li class="page-item disabled">
+                    <a class="page-link" href="#" aria-label="Précédent">
+                        <span aria-hidden="true">«</span>
+                        <span class="sr-only">Précédent</span>
+                    </a>
+                </li>
+            {% endif %}
+          
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                    <li class="page-item active">
+                        <a class="page-link" href="#">{{ num }}</a>
+                    </li>
+                {% else %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                    </li>
+                {% endif %}
+            {% endfor %}
+          
+            {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}" aria-label="Suivant">
+                        <span aria-hidden="true">»</span>
+                        <span class="sr-only">Suivant</span>
+                    </a>
+                </li>
+            {% else %}
+                <li class="page-item disabled">
+                    <a class="page-link" href="#" aria-label="Suivant">
+                        <span aria-hidden="true">»</span>
+                        <span class="sr-only">Suivant</span>
+                    </a>
+                </li>
+            {% endif %}
+        </ul>
+        
+      
+        
+        <div id="footer-bar" class="footer-bar-1 footer-bar-detached">
+            <!-- Projets Dropdown -->
+            <a href="/map_mobile/">
+                <i class="bi bi-pin-map"></i><span>Ajouter un Projet</span>
+            </a>
+            
+        
+            <!-- Other Links -->
+            <a href="#" id="toggle-menu" data-bs-toggle="offcanvas" data-bs-target="#menu-sidebar" class="circle-nav-2">
+              <img src="/static/web/assets/images/logo-sm.png" alt="Logo" style="width: 51px;height: 51px;margin-right: 0px;border-radius: 10px;margin-top: -35px;box-shadow: -1px -1px 4px #46444452;">
+              <span>AfricanMaps</span>
+            </a>
+            
+            <div id="menu-dropdown" class="dropdown-menu dropdown-menu-end py-0" style="display: none; position: absolute;">
+                <div class="d-flex align-items-center dropdown-item py-2 bg-secondary-subtle">
+                    <div class="flex-shrink-0">
+                        <img src="/static/web/assets/icons/icon_user.svg" alt="" class="thumb-md rounded-circle" style="width: 50px;height: 36px;">
+                    </div>
+                    <div class="flex-grow-1 ms-2 text-truncate align-self-center">
+                      <h6 class="my-0 fw-medium text-dark fs-13">{{ username }}</h6>
+                      <small class="text-muted mb-0">{{ role }}</small>
+                    </div>
+                </div>
+                <div class="dropdown-divider mb-0"></div>
+                <a class="dropdown-item text-danger" href="/logout_mobile/">
+                    <i class="las la-power-off fs-18 me-1 align-text-bottom"></i>Déconnexion
+                </a>
+            </div>
+            <style>
+              #menu-dropdown {
+                  z-index: 1050; /* تأكد من أن القائمة تظهر فوق العناصر الأخرى */
+                  transform: translate3d(0, -100%, 0); /* لجعل القائمة تظهر فوق الزر */
+              }
+    
+              .circle-nav-2 {
+                  cursor: pointer; /* لإظهار أن العنصر يمكن النقر عليه */
+              }
+    
+            </style>
+    
+            <script>
+              document.getElementById('toggle-menu').addEventListener('click', function (event) {
+                event.preventDefault();
+    
+                var dropdownMenu = document.getElementById('menu-dropdown');
+                
+                // Toggle the display of the dropdown menu
+                if (dropdownMenu.style.display === 'none' || dropdownMenu.style.display === '') {
+                    dropdownMenu.style.display = 'block';
+                    
+                    // Get the position of the button and calculate where to place the dropdown
+                    var rect = this.getBoundingClientRect();
+                    
+                    // Position the dropdown above the button
+                    dropdownMenu.style.top = '-40px';
+                    dropdownMenu.style.left = rect.left + 'px';
+                } else {
+                    dropdownMenu.style.display = 'none';
+                }
+            });
+    
+            // إغلاق القائمة عند النقر في أي مكان آخر في الصفحة
+            document.addEventListener('click', function (event) {
+                var dropdownMenu = document.getElementById('menu-dropdown');
+                var toggleButton = document.getElementById('toggle-menu');
+    
+                if (!toggleButton.contains(event.target) && !dropdownMenu.contains(event.target)) {
+                    dropdownMenu.style.display = 'none';
+                }
+            });
+    
+            </script>
+            
+            <a href="/locations_mobile/"><i class="bi bi-map"></i><span>Gérer les Projets</span></a>
+    
+        </div>
+    
+
+
+
+
+    </div>
+
+    
+
+</body>
+</html>

@@ -1,0 +1,95 @@
+{% extends 'dashboard_app/web/base.html' %}
+{% load static %}
+<title>{% block title %}Ajouter un nouveau projet{% endblock %}</title>
+
+{% block content %}
+
+{% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm border-theme-white-2" role="alert">
+        <div class="d-inline-flex justify-content-center align-items-center thumb-xs 
+            {% if message.tags == 'success' %} bg-success
+            {% elif message.tags == 'danger' %} bg-danger
+            {% elif message.tags == 'warning' %} bg-warning
+            {% elif message.tags == 'info' %} bg-purple
+            {% else %} bg-secondary {% endif %} 
+            rounded-circle mx-auto me-1">
+            <i class="fas 
+                {% if message.tags == 'success' %} fa-check
+                {% elif message.tags == 'danger' %} fa-xmark
+                {% elif message.tags == 'warning' %} fa-exclamation
+                {% elif message.tags == 'info' %} fa-info
+                {% else %} fa-info {% endif %}
+                align-self-center mb-0 text-white"></i>
+        </div>
+        {{ message|safe }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endfor %}
+{% endif %}
+
+
+
+<div class="row justify-content-center">
+
+    <div class="col-lg">
+        <div class="card">
+            <div class="card-body">
+              
+            <div id="viewDiv"></div>
+
+            <div class="modal fade" id="popupModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+            <div class="modal-dialog modal-fullscreen-lg-down" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h6 class="modal-title m-0" id="exampleModalCenterTitle">Ajouter un nouveau projet</h6>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" onclick="deleteGraphicAndClose()"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form method="POST" enctype="multipart/form-data" action="/save-location/">
+                            {% csrf_token %}
+                            <input hidden type="text" id="geojsonData" name="geojson" value='' placeholder="Données GeoJSON" class="form-control mb-2" />
+                            <input type="text" id="featureName" name="name" placeholder="Nom" required class="form-control mb-2" />
+                            <textarea id="featureDescription" name="description" placeholder="Description" rows="3" required class="form-control mb-2"></textarea>
+                            <button type="submit" class="btn btn-primary">Enregistrer</button>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal" onclick="deleteGraphicAndClose()">Fermer</button>
+                    </div>
+                </div>
+            </div>
+            </div>
+            
+            </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+ <!-- Pied de page -->
+ <footer class="footer text-center text-sm-start d-print-none">
+    <div class="container-xxl">
+        <div class="row">
+            <div class="col-12">
+                <div class="card mb-0 rounded-bottom-0">
+                    <div class="card-body">
+                        <p class="text-muted mb-0">
+                            © <script> document.write(new Date().getFullYear()) </script> AfricanMaps
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</footer>
+<!-- Fin du pied de page -->
+
+
+
+<!-- Fin du pied de page -->
+
+
+
+{% endblock content %}
+
