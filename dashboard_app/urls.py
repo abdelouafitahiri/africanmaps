@@ -12,9 +12,8 @@ urlpatterns = [
     path('item_mobile/<int:location_id>/add-item/', views.add_item_mobile, name='add_item_mobile'),
     path('item_mobile/<int:item_id>/update/', views.update_item_mobile, name='update_item_mobile'),
 
-    path('media_mobile/<int:media_id>/delete/', views.delete_media, name='delete_media_mobile'),
-    path('media_mobile/<int:media_id>/update/', views.update_media, name='update_media_mobile'),
-
+    path('media_mobile/<int:media_id>/delete/', views.delete_media_mobile, name='delete_media_mobile'),
+    path('media_mobile/<int:media_id>/update/', views.update_media_mobile, name='update_media_mobile'),
 
 
     # WEB VERSION

@@ -17,6 +17,7 @@ from .models import Location, Item, MediaModel
 import os
 import requests
 import boto3
+import uuid
 from slugify import slugify
 import psutil
 import json
@@ -207,7 +208,7 @@ def add_item_mobile(request, location_id):
             for media in media_files:
                 try:
                     # Créer un nom unique pour le fichier
-                    unique_filename = f"uploads/{item.location.name}/{item.name}/{media.name}"
+                    unique_filename = f"uploads/{item.location.name}/{item.name.replace(' ', '_')}/{media.name.replace(' ', '_')}"
                     
                     # Télécharger le fichier sur DigitalOcean Spaces
                     s3.upload_fileobj(
@@ -327,86 +328,71 @@ def update_item_mobile(request, item_id):
 
 
 def update_media_mobile(request, media_id):
-    media = get_object_or_404(MediaModel, id=media_id)
-    new_file = request.FILES.get('media_file')  # الحصول على الملف الجديد من الطلب
+    """
+    Cette vue permet de mettre à jour un fichier média mobile existant.
+    Elle supprime l'ancien fichier et télécharge un nouveau fichier.
+    """
+    media = get_object_or_404(MediaModel, id=media_id)  # Récupérer l'instance du fichier média
+    item = media.item  # Récupérer l'élément associé au média
 
-    if new_file:
-        print("new")
-        # إعداد عميل boto3 لـ DigitalOcean Spaces
-        s3 = boto3.client(
-            's3',
-            region_name='lon1',
-            endpoint_url=settings.AWS_S3_ENDPOINT_URL,
-            aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-            aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY
-        )
+    if request.method == 'POST':
+        new_file = request.FILES.get('media_file')  # Récupérer le nouveau fichier envoyé dans la requête
 
-        # إذا كان يوجد ملف قديم، نحذفه من Spaces
-        old_file_key = media.file_url.replace(f"https://{settings.AWS_S3_CUSTOM_DOMAIN}/", "") if media.file_url else None
-
-        # إنشاء اسم فريد للملف الجديد
-        unique_filename = f"uploads/{media.item.location.name}/{media.item.name}/{new_file.name}"
-        folder_prefix = f"uploads/{media.item.location.name}/{media.item.name}/"  # المجلد
-
-        try:
-            # رفع الملف الجديد إلى DigitalOcean Spaces
-            s3.upload_fileobj(
-                new_file,
-                settings.AWS_STORAGE_BUCKET_NAME,
-                unique_filename,
-                ExtraArgs={'ACL': 'public-read'}
+        if new_file:
+            # Initialiser boto3 pour communiquer avec DigitalOcean Spaces
+            s3 = boto3.client(
+                's3',
+                region_name='lon1',
+                endpoint_url=settings.AWS_S3_ENDPOINT_URL,
+                aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+                aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY
             )
 
-            # إنشاء رابط جديد للملف المرفوع
-            new_media_url = f"https://{settings.AWS_S3_CUSTOM_DOMAIN}/africanmaps/{unique_filename}"
+            # Chemin du fichier ancien dans DigitalOcean Spaces
+            old_file_key = media.file_url.replace(f"https://{settings.AWS_S3_CUSTOM_DOMAIN}/africanmaps/", "").strip()
 
-            # تحديث قاعدة البيانات بالملف الجديد
-            media.file_url = new_media_url
-            media.save()
-
-            # طباعة جميع الملفات في نفس المجلد
-            response = s3.list_objects_v2(Bucket=settings.AWS_STORAGE_BUCKET_NAME, Prefix=folder_prefix)
-            if 'Contents' in response:
-                print(f"Media files in the folder '{folder_prefix}':")
-                for obj in response['Contents']:
-                    print(f" - {obj['Key']} (Last Modified: {obj['LastModified']}, Size: {obj['Size']} bytes)")
-            else:
-                print(f"No files found in folder: {folder_prefix}")
-
-            # محاولة حذف الملف القديم
+            # Supprimer l'ancien fichier s'il existe
             if old_file_key:
-                print(f"Attempting to delete old file: {old_file_key}")
-
-                # التحقق من وجود الملف قبل الحذف
                 try:
-                    response = s3.head_object(Bucket=settings.AWS_STORAGE_BUCKET_NAME, Key=old_file_key)
-                    print(f"Old file exists: {old_file_key}")
-                    response = s3.delete_object(Bucket=settings.AWS_STORAGE_BUCKET_NAME, Key=old_file_key)
-                    print(f"Réponse de la suppression: {response}")
-                    print(f"Ancien fichier supprimé: {old_file_key}")
+                    s3.head_object(Bucket=settings.AWS_STORAGE_BUCKET_NAME, Key=old_file_key)
+                    s3.delete_object(Bucket=settings.AWS_STORAGE_BUCKET_NAME, Key=old_file_key)
+                    print(f"Ancien fichier supprimé : {old_file_key}")
                 except s3.exceptions.ClientError as e:
-                    # إذا كان الخطأ بسبب عدم وجود الملف
                     if e.response['Error']['Code'] == '404':
-                        print(f"Le fichier n'existe pas: {old_file_key}")
+                        print(f"L'ancien fichier n'existe pas : {old_file_key}")
                     else:
-                        print(f"Erreur lors de la tentative de suppression: {e}")
-                        messages.warning(request, f"Erreur lors de la suppression de l'ancien fichier: {e}")
+                        print(f"Erreur lors de la vérification ou de la suppression de l'ancien fichier : {e}")
 
-            messages.success(request, "Le fichier média a été mis à jour avec succès!")
-            return redirect(reverse('location_mobile', args=[media.item.location.id]))
+            # Définir un nouveau nom pour le fichier à télécharger
+            unique_filename = f"uploads/mobile/{item.location.name}/{item.name.replace(' ', '_')}/{new_file.name.replace(' ', '_')}"
 
-        except Exception as e:
-            messages.warning(request, f"Erreur lors du téléchargement du nouveau fichier: {e}")
-            return redirect(reverse('location_mobile', args=[media.item.location.id]))
+            try:
+                # Télécharger le nouveau fichier dans DigitalOcean Spaces
+                s3.upload_fileobj(new_file, settings.AWS_STORAGE_BUCKET_NAME, unique_filename, ExtraArgs={'ACL': 'public-read'})
 
-    else:
-        messages.warning(request, 'Aucun nouveau fichier sélectionné pour la mise à jour.')
+                # Mettre à jour l'URL du nouveau fichier
+                new_media_url = f"https://{settings.AWS_S3_CUSTOM_DOMAIN}/africanmaps/{unique_filename}"
+                media.file_url = new_media_url  # Mettre à jour le lien dans la base de données
+                media.save()  # Enregistrer les modifications
 
-    return redirect(reverse('location_mobile', args=[media.item.location.id]))
+                messages.success(request, "Le fichier mobile a été mis à jour avec succès!")
+                return redirect(reverse('location_mobile', args=[item.location.id]))
+
+            except Exception as e:
+                messages.error(request, f"Une erreur est survenue lors du téléchargement du nouveau fichier mobile : {str(e)}")
+                return redirect(reverse('location_mobile', args=[item.location.id]))
+
+        else:
+            messages.warning(request, 'Aucun nouveau fichier sélectionné pour la mise à jour mobile.')
+            return redirect(reverse('location_mobile', args=[item.location.id]))
+
+    messages.warning(request, "Méthode non autorisée.")
+    return redirect(reverse('location_mobile', args=[item.location.id]))
+
 
 def delete_media_mobile(request, media_id):
     """
-    Cette vue permet de supprimer un fichier média spécifique de la base de données ainsi que 
+    Cette vue permet de supprimer un fichier média mobile spécifique de la base de données ainsi que 
     du stockage DigitalOcean Spaces.
     """
     if request.method == 'POST':
@@ -437,14 +423,15 @@ def delete_media_mobile(request, media_id):
             # حذف السجل من قاعدة البيانات
             media.delete()
 
-            messages.success(request, 'Le fichier a été supprimé avec succès!')
+            messages.success(request, 'Le fichier mobile a été supprimé avec succès!')
         except Exception as e:
-            messages.warning(request, f"Erreur lors de la suppression du fichier: {e}")
+            messages.warning(request, f"Erreur lors de la suppression du fichier mobile: {e}")
 
         return redirect(reverse('location_mobile', args=[location_id]))
 
     messages.warning(request, 'La méthode de commande est incorrecte.')
-    return redirect('locations_mobile')
+
+    return redirect('locations_list_mobile')
 
 
 
@@ -896,7 +883,6 @@ def update_item(request, item_id):
             name = request.POST.get('name')
             description = request.POST.get('description')
             media_files = request.FILES.getlist('media')
-            print(media_files)
 
             # Vérifier que tous les champs obligatoires sont remplis
             if not name or not description:
@@ -963,72 +949,68 @@ def delete_item(request, item_id):
     return JsonResponse({'error': 'Méthode de requête non valide.'}, status=400)
 
 def update_media(request, media_id):
-    media = get_object_or_404(MediaModel, id=media_id)
-    new_file = request.FILES.get('media_file')  # الحصول على الملف الجديد من الطلب
+    """
+    Cette vue permet de mettre à jour un fichier média existant.
+    Elle supprime l'ancien fichier et télécharge un nouveau fichier.
+    """
+    media = get_object_or_404(MediaModel, id=media_id)  # Récupérer l'instance du fichier média
+    item = media.item  # Récupérer l'élément associé au média
 
-    if new_file:
-        # إعداد عميل boto3 لـ DigitalOcean Spaces
-        s3 = boto3.client(
-            's3',
-            region_name='lon1',
-            endpoint_url=settings.AWS_S3_ENDPOINT_URL,
-            aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-            aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY
-        )
+    if request.method == 'POST':
+        new_file = request.FILES.get('media_file')  # Récupérer le nouveau fichier envoyé dans la requête
 
-        # إذا كان يوجد ملف قديم، نحذفه من Spaces
-        old_file_key = media.file_url.replace(f"https://{settings.AWS_S3_CUSTOM_DOMAIN}/", "") if media.file_url else None
-
-        # إنشاء اسم فريد للملف الجديد
-        unique_filename = f"uploads/{media.item.location.name}/{media.item.name}/{new_file.name}"
-        folder_prefix = f"uploads/{media.item.location.name}/{media.item.name}/"  # المجلد
-
-        try:
-            # رفع الملف الجديد إلى DigitalOcean Spaces
-            s3.upload_fileobj(
-                new_file,
-                settings.AWS_STORAGE_BUCKET_NAME,
-                unique_filename,
-                ExtraArgs={'ACL': 'public-read'}
+        if new_file:
+            # Initialiser boto3 pour communiquer avec DigitalOcean Spaces
+            s3 = boto3.client(
+                's3',
+                region_name='lon1',
+                endpoint_url=settings.AWS_S3_ENDPOINT_URL,
+                aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+                aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY
             )
 
-            # إنشاء رابط جديد للملف المرفوع
-            new_media_url = f"https://{settings.AWS_S3_CUSTOM_DOMAIN}/africanmaps/{unique_filename}"
 
-            # تحديث قاعدة البيانات بالملف الجديد
-            media.file_url = new_media_url
-            media.save()
+            # Chemin du fichier ancien dans DigitalOcean Spaces
+            old_file_key = media.file_url.replace(f"https://{settings.AWS_S3_CUSTOM_DOMAIN}/africanmaps/", "").strip()
 
-            # طباعة جميع الملفات في نفس المجلد
-            response = s3.list_objects_v2(Bucket=settings.AWS_STORAGE_BUCKET_NAME, Prefix=folder_prefix)
-            if 'Contents' in response:
-                print(f"Media files in the folder '{folder_prefix}':")
-                for obj in response['Contents']:
-                    print(f" - {obj['Key']} (Last Modified: {obj['LastModified']}, Size: {obj['Size']} bytes)")
-            else:
-                print(f"No files found in folder: {folder_prefix}")
-
-            # محاولة حذف الملف القديم
+            # Supprimer l'ancien fichier s'il existe
             if old_file_key:
                 try:
-                    response = s3.delete_object(Bucket=settings.AWS_STORAGE_BUCKET_NAME, Key=old_file_key)
-                    print(f"Réponse de la suppression: {response}")
-                    print(f"Ancien fichier supprimé: {old_file_key}")
-                except Exception as e:
-                    print(f"Erreur lors de la suppression de l'ancien fichier: {e}")
-                    messages.warning(request, f"Erreur lors de la suppression de l'ancien fichier: {e}")
+                    s3.head_object(Bucket=settings.AWS_STORAGE_BUCKET_NAME, Key=old_file_key)
+                    s3.delete_object(Bucket=settings.AWS_STORAGE_BUCKET_NAME, Key=old_file_key)
+                    print(f"Ancien fichier supprimé : {old_file_key}")
+                except s3.exceptions.ClientError as e:
+                    if e.response['Error']['Code'] == '404':
+                        print(f"L'ancien fichier n'existe pas : {old_file_key}")
+                    else:
+                        print(f"Erreur lors de la vérification ou de la suppression de l'ancien fichier : {e}")
 
-            messages.success(request, "Le fichier média a été mis à jour avec succès!")
-            return redirect(reverse('location-detail', args=[media.item.location.id]))
+            # Définir un nouveau nom pour le fichier à télécharger
+            unique_filename = f"uploads/{item.location.name}/{item.name.replace(' ', '_')}/{new_file.name.replace(' ', '_')}"
 
-        except Exception as e:
-            messages.warning(request, f"Erreur lors du téléchargement du nouveau fichier: {e}")
-            return redirect(reverse('location-detail', args=[media.item.location.id]))
+            try:
+                # Télécharger le nouveau fichier dans DigitalOcean Spaces
+                s3.upload_fileobj(new_file, settings.AWS_STORAGE_BUCKET_NAME, unique_filename, ExtraArgs={'ACL': 'public-read'})
 
-    else:
-        messages.warning(request, 'Aucun nouveau fichier sélectionné pour la mise à jour.')
+                # Mettre à jour l'URL du nouveau fichier
+                new_media_url = f"https://{settings.AWS_S3_CUSTOM_DOMAIN}/africanmaps/{unique_filename}"
+                media.file_url = new_media_url  # Mettre à jour le lien dans la base de données
+                media.save()  # Enregistrer les modifications
 
-    return redirect(reverse('location-detail', args=[media.item.location.id]))
+                messages.success(request, "Le fichier a été mis à jour avec succès!")
+                return redirect(reverse('location-detail', args=[item.location.id]))
+
+            except Exception as e:
+                messages.error(request, f"Une erreur est survenue lors du téléchargement du nouveau fichier : {str(e)}")
+                return redirect(reverse('location-detail', args=[item.location.id]))
+
+        else:
+            messages.warning(request, 'Aucun nouveau fichier sélectionné pour la mise à jour.')
+            return redirect(reverse('location-detail', args=[item.location.id]))
+
+    # Si la méthode n'est pas POST, afficher un message d'erreur
+    messages.warning(request, "Méthode non autorisée.")
+    return redirect(reverse('location-detail', args=[item.location.id]))
 
 def delete_media(request, media_id):
     """
@@ -1160,7 +1142,7 @@ def management_add_media(request, item_id):
         for media in files:
             try:
                 # Créer un nom de fichier unique
-                unique_filename = f"uploads/{item.location.name}/{item.name}/{media.name}"
+                unique_filename = f"uploads/{item.location.name}/{item.name.replace(' ', '_')}/{media.name.replace(' ', '_')}"
 
                 # Télécharger le fichier vers DigitalOcean Spaces
                 s3.upload_fileobj(
@@ -1226,7 +1208,8 @@ def management_update_media(request, media_id):
     Elle analyse les nouvelles images pour obtenir l'angle de capture et génère un graphique d'angle si applicable.
     """
     media = get_object_or_404(MediaModel, id=media_id)  # Récupérer l'instance du fichier média à partir de l'ID
-    item_id = media.item.id  # Récupérer l'ID de l'élément associé
+    item = media.item  # Récupérer l'élément associé
+    item_id = item.id  # Récupérer l'ID de l'élément associé
     new_file = request.FILES.get('media_file')  # Récupérer le nouveau fichier envoyé dans la requête
 
     if new_file:
@@ -1239,16 +1222,35 @@ def management_update_media(request, media_id):
             aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY
         )
 
+        # Récupérer la clé du fichier ancien
+        old_file_key = media.file_url.replace(f"https://{settings.AWS_S3_CUSTOM_DOMAIN}/africanmaps/", "").strip()
+
+        # Supprimer l'ancien fichier s'il existe
+        if old_file_key:
+            try:
+                s3.head_object(Bucket=settings.AWS_STORAGE_BUCKET_NAME, Key=old_file_key)
+                s3.delete_object(Bucket=settings.AWS_STORAGE_BUCKET_NAME, Key=old_file_key)
+                print(f"Ancien fichier supprimé : {old_file_key}")
+            except s3.exceptions.ClientError as e:
+                if e.response['Error']['Code'] == '404':
+                    print(f"L'ancien fichier n'existe pas : {old_file_key}")
+                else:
+                    messages.error(request, f"Erreur lors de la suppression de l'ancien fichier : {e}")
+
         # Créer un nom de fichier unique pour le nouveau média
-        unique_filename = f"uploads/{media.item.location.name}/{media.item.name}/{new_file.name}"
+        unique_filename = f"uploads/{item.location.name}/{item.name.replace(' ', '_')}/{new_file.name.replace(' ', '_')}"
 
         # Télécharger le nouveau fichier vers DigitalOcean Spaces
-        s3.upload_fileobj(
-            new_file,
-            settings.AWS_STORAGE_BUCKET_NAME,
-            unique_filename,
-            ExtraArgs={'ACL': 'public-read'}  # Rendre le fichier public
-        )
+        try:
+            s3.upload_fileobj(
+                new_file,
+                settings.AWS_STORAGE_BUCKET_NAME,
+                unique_filename,
+                ExtraArgs={'ACL': 'public-read'}  # Rendre le fichier public
+            )
+        except Exception as e:
+            messages.error(request, f"Erreur lors du téléchargement du fichier: {str(e)}")
+            return redirect(reverse('manage-media') + f'?item_id={item_id}')
 
         # Créer l'URL du nouveau fichier
         new_file_url = f"https://{settings.AWS_S3_CUSTOM_DOMAIN}/africanmaps/{unique_filename}"
@@ -1317,7 +1319,6 @@ def management_delete_media(request, media_id):
 
     messages.warning(request, 'La méthode de requête est incorrecte.')
     return redirect(reverse('manage-media') + f'?item_id={item_id}')
-
 
 def manage_items(request):
     """
