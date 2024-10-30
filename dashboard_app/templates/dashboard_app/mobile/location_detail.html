@@ -1491,7 +1491,7 @@ function openCamera() {
     let recordedChunks = [];
 
     // Accéder à la caméra arrière
-    navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: { exact: "environment" } } })
         .then(function (stream) {
             video.srcObject = stream;
 
