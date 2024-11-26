@@ -259,15 +259,18 @@ require([
   });
 
 
-  // Se déplacer vers l'emplacement de l'utilisateur au chargement de la carte
+
   if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(
+    // Démarrer la surveillance de la position de l'utilisateur
+    const watchId = navigator.geolocation.watchPosition(
       function (position) {
         const { latitude, longitude } = position.coords;
+  
+        // Mettre à jour la vue de la carte avec la nouvelle position
         view.center = [longitude, latitude];
         view.zoom = 18;
-
-        // Ajouter un point pour l'emplacement de l'utilisateur
+  
+        // Ajouter ou mettre à jour le point représentant la position de l'utilisateur
         const pointGraphic = {
           geometry: {
             type: "point",
@@ -275,23 +278,36 @@ require([
             latitude: latitude
           },
           symbol: {
-            type: "simple-marker",
+            type: "simple-marker", // Style du marqueur
             style: "circle",
-            color: [36, 105, 92, 0.95],
-            size: "16px",
-            outline: { color: [220, 220, 220, 1], width: 1.5 }
+            color: [36, 105, 92, 0.95], // Couleur du marqueur
+            size: "16px", // Taille du marqueur
+            outline: { color: [220, 220, 220, 1], width: 1.5 } // Contour du marqueur
           }
         };
+  
+        // Supprimer les points existants pour éviter les doublons
+        graphicsLayer.removeAll();
+  
+        // Ajouter le nouveau point représentant la position actuelle
         graphicsLayer.add(pointGraphic);
       },
-      function () {
-        console.error("Impossible d'obtenir la position de l'utilisateur.");
+      function (error) {
+        // Afficher une erreur si la position de l'utilisateur ne peut pas être récupérée
+        console.error("Erreur lors de la récupération de la position de l'utilisateur:", error);
       },
-      { enableHighAccuracy: true }
-
+      { enableHighAccuracy: true } // Activer une précision élevée pour les coordonnées GPS
     );
+  
+    // Fonction pour arrêter la surveillance de la position de l'utilisateur
+    function stopTracking() {
+      navigator.geolocation.clearWatch(watchId); // Arrêter le suivi GPS
+    }
+  } else {
+    // Afficher une erreur si la géolocalisation n'est pas supportée par le navigateur
+    console.error("La géolocalisation n'est pas supportée par ce navigateur.");
   }
-
+    
   // Afficher la fenêtre modale lors du clic sur l'élément dessiné
   view.on("click", function(event) {
     view.hitTest(event).then(function(response) {
