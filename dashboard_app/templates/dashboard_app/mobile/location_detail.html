@@ -37,6 +37,41 @@
         z-index: 1;
     }
 
+    #buttonContainer {
+        position: absolute;
+        bottom: 20px;
+        right: 15px;
+        z-index: 10;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+    }
+
+    button.zoomicon {
+        border: none;
+        background: #ffffff;
+        width: 32px;
+        height: 32px;
+        border-radius: 5px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        padding: 0;
+        margin-bottom: 80px;
+    }
+
+    button i {
+        color: #24695c;
+        font-size: 20px;
+    }
+
+    button:hover {
+        background: #e8f5f3;
+    }
+
     #footer-bar {
         z-index: 10;
     }
@@ -511,6 +546,11 @@
 
     <div id="viewDiv"></div>
 
+    <div id="buttonContainer">
+        <button id="zoomButton" class="zoomicon" title="Déplacer vers l'emplacement géographique actuel">
+            <i class="iconoir-position"></i>
+        </button>
+    </div>
 
 
 </div>
@@ -992,59 +1032,77 @@ require([
         }
     }
 
-    // إخفاء الأزرار افتراضيًا في البداية
+    // Masquer les boutons par défaut au début
     actionButtonsDiv.style.display = 'none';
 
-
-        
+    
+    // التأكد من دعم الجيولكايشن
     if (navigator.geolocation) {
-        // Démarrer la surveillance de la position de l'utilisateur
-        const watchId = navigator.geolocation.watchPosition(
-        function (position) {
-            const { latitude, longitude } = position.coords;
-    
-            // Mettre à jour la vue de la carte avec la nouvelle position
-            view.center = [longitude, latitude];
-            view.zoom = 18;
-    
-            // Ajouter ou mettre à jour le point représentant la position de l'utilisateur
-            const pointGraphic = {
-            geometry: {
-                type: "point",
-                longitude: longitude,
-                latitude: latitude
+        // إضافة الموقع الحالي تلقائيًا إلى الخريطة عند التحقق من تشغيل GPS
+        navigator.geolocation.getCurrentPosition(
+            function (position) {
+                const { latitude, longitude } = position.coords;
+
+                // تحديث مركز الخريطة
+                view.center = [longitude, latitude];
+                view.zoom = 18;
+
+                // إضافة نقطة الموقع على الخريطة
+                const userLocationGraphic = new Graphic({
+                    geometry: {
+                        type: "point",
+                        longitude: longitude,
+                        latitude: latitude
+                    },
+                    symbol: {
+                        type: "simple-marker",
+                        style: "circle",
+                        color: [36, 105, 92, 0.95],
+                        size: "16px",
+                        outline: { color: [220, 220, 220, 1], width: 1.5 }
+                    }
+                });
+
+                // التأكد من أن طبقة الرسومات مضافة
+                const graphicsLayer = new GraphicsLayer();
+                map.add(graphicsLayer);
+
+                graphicsLayer.add(userLocationGraphic); // إضافة النقطة الجديدة
+                console.log("تم تحديد الموقع الحالي وعرضه على الخريطة.");
             },
-            symbol: {
-                type: "simple-marker", // Style du marqueur
-                style: "circle",
-                color: [36, 105, 92, 0.95], // Couleur du marqueur
-                size: "16px", // Taille du marqueur
-                outline: { color: [220, 220, 220, 1], width: 1.5 } // Contour du marqueur
-            }
-            };
-    
-            // Supprimer les points existants pour éviter les doublons
-            graphicsLayer.removeAll();
-    
-            // Ajouter le nouveau point représentant la position actuelle
-            graphicsLayer.add(pointGraphic);
-        },
-        function (error) {
-            // Afficher une erreur si la position de l'utilisateur ne peut pas être récupérée
-            console.error("Erreur lors de la récupération de la position de l'utilisateur:", error);
-        },
-        { enableHighAccuracy: true } // Activer une précision élevée pour les coordonnées GPS
+            function (error) {
+                console.error("Erreur lors de la récupération de la position de l'utilisateur:", error);
+            },
+            { enableHighAccuracy: true }
         );
-    
-        // Fonction pour arrêter la surveillance de la position de l'utilisateur
-        function stopTracking() {
-        navigator.geolocation.clearWatch(watchId); // Arrêter le suivi GPS
+
+        // وظيفة الانتقال إلى موقع المستخدم عند الضغط على الزر
+        function zoomToUserLocation() {
+            navigator.geolocation.getCurrentPosition(
+                function (position) {
+                    const { latitude, longitude } = position.coords;
+
+                    // تحديث مركز الخريطة إلى الموقع الحالي
+                    view.center = [longitude, latitude];
+                    view.zoom = 18;
+                    console.log("تم إعادة التكبير إلى الموقع الحالي.");
+                },
+                function (error) {
+                    console.error("Erreur lors de la récupération de la position de l'utilisateur:", error);
+                },
+                { enableHighAccuracy: true }
+            );
         }
+
+        // ربط الزر بوظيفة الزوم
+        const zoomButton = document.getElementById("zoomButton");
+        zoomButton.addEventListener("click", zoomToUserLocation);
     } else {
-        // Afficher une erreur si la géolocalisation n'est pas supportée par le navigateur
         console.error("La géolocalisation n'est pas supportée par ce navigateur.");
     }
-    
+
+
+
     // مراقبة التحديدات على الخريطة لتحديث عرض الأزرار
     view.on("click", function(event) {
         view.hitTest(event).then(function(response) {
