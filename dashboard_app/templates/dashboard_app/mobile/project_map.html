@@ -17,225 +17,277 @@
 
 
 
-<style>
-
-  body, html {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-      overflow: hidden;
-  }
+    <style>
+      body, html {
+          margin: 0;
+          padding: 0;
+          height: 100%;
+          overflow: hidden;
+      }
   
-  #viewDiv {
-      position: absolute;
-      top: 0px;
-      bottom: 0px;
-      left: 0;
-      right: 0;
-      width: 100%;
-      z-index: 1;
-  }
+      #viewDiv {
+          position: absolute;
+          top: 0px;
+          bottom: 0px;
+          left: 0;
+          right: 0;
+          width: 100%;
+          z-index: 1;
+      }
   
-  #footer-bar {
-      z-index: 10;
-  }
+      #buttonContainer {
+          position: absolute;
+          bottom: 20px;
+          right: 15px;
+          z-index: 10;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 10px;
+      }
   
-  .esri-basemap-gallery__item-container {
-      display: flex;
-      flex-wrap: nowrap;
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
-  }
-  .offline-message,.online-message {
-      position: fixed;
-      transform: translateY(300%);
-      padding-bottom: 0;
-      font-weight: 700;
-      font-family: "Varela Round",sans-serif;
-      transition: all 350ms ease;
-      bottom: 10px;
-      left: 10px;
-      right: 10px;
-      z-index: 95;
-      padding-left: 15px;
-      border-radius: 12px;
-      line-height: 50px
-  }
+      button.zoomicon {
+          border: none;
+          background: #ffffff;
+          width: 32px;
+          height: 32px;
+          border-radius: 5px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+          padding: 0;
+          margin-bottom: 80px;
+      }
   
-  .offline-message-active,.online-message-active {
-      transform: translateY(calc(-70px + (constant(safe-area-inset-bottom))));
-      transform: translateY(calc(-70px + (env(safe-area-inset-bottom))))
-  }
+      button i {
+          color: #24695c;
+          font-size: 20px;
+      }
   
-  #footer-bar {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      z-index: 98;
-      backdrop-filter: saturate(180%) blur(10px);
-      -webkit-backdrop-filter: saturate(180%) blur(10px);
-      background: rgba(255,255,255,1);
-      box-shadow: 0 -5px 5px 0 rgba(0,0,0,.04);
-      height: 65px;
-      display: flex;
-      text-align: center
-  }
+      button:hover {
+          background: #e8f5f3;
+      }
   
-  #footer-bar a:not(.btn) {
-      padding-top: 12px;
-      position: relative;
-      flex: 1 1 auto;
-      color: #1f1f1f
-  }
+      #footer-bar {
+          z-index: 10;
+      }
   
-  #footer-bar a:not(.btn) span {
-      position: relative;
-      z-index: 2;
-      display: block;
-      font-size: 10px;
-      font-weight: 500;
-      margin-top: -3px;
-      opacity: .7;
-      font-family: "Varela Round",sans-serif!important
-  }
+      .esri-basemap-gallery__item-container {
+          display: flex;
+          flex-wrap: nowrap;
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
+      }
   
-  #footer-bar a:not(.btn) i {
-      margin-top: 2px;
-      display: block;
-      font-size: 18px;
-      position: relative;
-      z-index: 2
-  }
+      .esri-sketch__section esri-sketch__info-section esri-sketch__info-count-section{
+          display: none;
+      }
+      .esri-sketch__section esri-sketch__section esri-sketch__info-section{
+          display: none;
+      }
   
-  #footer-bar .badge {
-      height: 15px;
-      min-width: 15px;
-      line-height: 16px;
-      font-size: 8px;
-      font-style: normal;
-      border-radius: 15px;
-      text-align: center;
-      padding: 0;
-      position: absolute;
-      top: 8px;
-      margin-right: -5px;
-      z-index: 3
-  }
+      #footer-bar {
+          position: fixed;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          z-index: 98;
+          backdrop-filter: saturate(180%) blur(10px);
+          -webkit-backdrop-filter: saturate(180%) blur(10px);
+          background: rgba(255,255,255,1);
+          box-shadow: 0 -5px 5px 0 rgba(0,0,0,.04);
+          height: 65px;
+          display: flex;
+          text-align: center
+      }
   
-  #footer-bar .badge-text {
-      padding: 0 5px
-  }
+      #footer-bar a:not(.btn) {
+          padding-top: 12px;
+          position: relative;
+          flex: 1 1 auto;
+          color: #1f1f1f
+      }
   
-  .footer-clear {
-      padding-bottom: calc(100px + env(safe-area-inset-bottom))!important
-  }
+      #footer-bar a:not(.btn) span {
+          position: relative;
+          z-index: 2;
+          display: block;
+          font-size: 10px;
+          font-weight: 500;
+          margin-top: -3px;
+          opacity: .7;
+          font-family: "Varela Round",sans-serif!important
+      }
   
-  .iosTabBar {
-      height: 65px!important;
-      transform: translateY(env(safe-area-inset-bottom))
-  }
+      #footer-bar a:not(.btn) i {
+          margin-top: 2px;
+          display: block;
+          font-size: 18px;
+          position: relative;
+          z-index: 2
+      }
   
-  #footer-bar.position-relative {
-      z-index: 90!important
-  }
+      #footer-bar .badge {
+          height: 15px;
+          min-width: 15px;
+          line-height: 16px;
+          font-size: 8px;
+          font-style: normal;
+          border-radius: 15px;
+          text-align: center;
+          padding: 0;
+          position: absolute;
+          top: 8px;
+          margin-right: -5px;
+          z-index: 3
+      }
   
-  .footer-bar-no-text i {
-      padding-top: 8px
-  }
+      #footer-bar .badge-text {
+          padding: 0 5px
+      }
   
-  #footer-bar .circle-nav-1 * {
-      color: #fff!important
-  }
+      .footer-clear {
+          padding-bottom: calc(100px + env(safe-area-inset-bottom))!important
+      }
   
-  #footer-bar .circle-nav-1::after {
-      position: absolute;
-      content: "";
-      width: 60px;
-      height: 60px;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%,-50%);
-      border-radius: 100%
-  }
+      .iosTabBar {
+          height: 65px!important;
+          transform: translateY(env(safe-area-inset-bottom))
+      }
   
-  #footer-bar .circle-nav-2 i {
-      color: #fff!important;
-      transform: translateY(-18px);
-      font-size: 20px!important
-  }
+      #footer-bar.position-relative {
+          z-index: 90!important
+      }
   
-  #footer-bar .circle-nav-2::after {
-      position: absolute;
-      content: "";
-      width: 50px;
-      height: 50px;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%,-50%);
-      margin-top: -25px;
-      border-radius: 10px;
-      z-index: -1
-  }
+      .footer-bar-no-text i {
+          padding-top: 8px
+      }
   
-  #footer-bar .circle-nav-2::before {
-      content: "";
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      width: 50px;
-      height: 50px;
-      margin-top: -25px;
-      margin-left: -5px;
-      border-radius: 20px;
-      background: inherit;
-      z-index: -1;
-      transform: scale(.75) translate(-55%,-45%);
-      filter: blur(8px)
-  }
+      #footer-bar .circle-nav-1 * {
+          color: #fff!important
+      }
   
-  #footer-bar .btn {
-      margin: 0 10px;
-      margin-top: 15px;
-      font-size: 12px;
-      height: 35px;
-      line-height: 25px;
-      padding: 5px 15px
-  }
+      #footer-bar .circle-nav-1::after {
+          position: absolute;
+          content: "";
+          width: 60px;
+          height: 60px;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%,-50%);
+          border-radius: 100%
+      }
   
-  .footer-bar-1 span {
-      transform: translateY(2px)
-  }
+      #footer-bar .circle-nav-2 i {
+          color: #fff!important;
+          transform: translateY(-18px);
+          font-size: 20px!important
+      }
   
-  .footer-bar-1 i {
-      transform: translateY(-2px)
-  }
+      #footer-bar .circle-nav-2::after {
+          position: absolute;
+          content: "";
+          width: 50px;
+          height: 50px;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%,-50%);
+          margin-top: -25px;
+          border-radius: 10px;
+          z-index: -1
+      }
   
-  .footer-bar-1.footer-bar-no-text .circle-nav-1 i {
-      font-size: 20px!important;
-      transform: translateY(-2px)!important
-  }
+      #footer-bar .circle-nav-2::before {
+          content: "";
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          width: 50px;
+          height: 50px;
+          margin-top: -25px;
+          margin-left: -5px;
+          border-radius: 20px;
+          background: inherit;
+          z-index: -1;
+          transform: scale(.75) translate(-55%,-45%);
+          filter: blur(8px)
+      }
   
-  .footer-bar-3 .active-nav i,.footer-bar-3 .active-nav span {
-      transform: translateY(-3px)
-  }
+      #footer-bar .btn {
+          margin: 0 10px;
+          margin-top: 15px;
+          font-size: 12px;
+          height: 35px;
+          line-height: 25px;
+          padding: 5px 15px
+      }
   
-  .footer-bar-4 .active-nav * {
-      color: #fff!important
-  }
+      .footer-bar-1 span {
+          transform: translateY(2px)
+      }
   
-  .footer-bar-detached {
-      border-radius: 15px;
-      left: 7px!important;
-      right: 7px!important;
-      bottom: 15px!important;
-      box-shadow: 0 0 15px 0 rgba(0,0,0,.1)!important
-  }
+      .footer-bar-1 i {
+          transform: translateY(-2px)
+      }
   
-  #footer-bar:not(.iosTabBar) {
-      bottom: 15px!important
-  }
-</style>
+      .footer-bar-1.footer-bar-no-text .circle-nav-1 i {
+          font-size: 20px!important;
+          transform: translateY(-2px)!important
+      }
+  
+      .footer-bar-3 .active-nav i,.footer-bar-3 .active-nav span {
+          transform: translateY(-3px)
+      }
+  
+      .footer-bar-4 .active-nav * {
+          color: #fff!important
+      }
+  
+      .footer-bar-detached {
+          border-radius: 15px;
+          left: 7px!important;
+          right: 7px!important;
+          bottom: 15px!important;
+          box-shadow: 0 0 15px 0 rgba(0,0,0,.1)!important
+      }
+  
+      #footer-bar:not(.iosTabBar) {
+          bottom: 15px!important
+      }
+  
+      
+      
+  
+      .image-item img, .image-item video {
+      max-width: 100%; /* اجعل العرض يتناسب مع حجم الحاوية */
+      height: auto;    /* حافظ على نسبة العرض إلى الارتفاع */
+      border-radius: 5px; /* إضافة زوايا مستديرة */
+      box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); /* إضافة تأثير ظل */
+      margin-bottom: 10px; /* مسافة بين الصورة والزر */
+      }
+  
+      .image-gallery {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 10px;
+          margin-bottom: 40px;
+      }
+  
+      .image-gallery-edit {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 10px;
+          margin-bottom: 40px;
+      }
+  
+      .image-item {
+          flex-basis: calc(20% - 50px);
+      }
+  
+  
+  </style>  
       
 </head>
 <body class="">
@@ -381,6 +433,12 @@
       </div>
 
       <div id="viewDiv"></div>
+
+      <div id="buttonContainer">
+        <button id="zoomButton" class="zoomicon" title="Déplacer vers l'emplacement géographique actuel">
+            <i class="iconoir-position"></i>
+        </button>
+    </div>
 
 
 
@@ -654,37 +712,70 @@
   
     // Se déplacer vers l'emplacement de l'utilisateur au chargement de la carte
     if (navigator.geolocation) {
+      // إضافة الموقع الحالي تلقائيًا إلى الخريطة عند التحقق من تشغيل GPS
       navigator.geolocation.getCurrentPosition(
-        function (position) {
-          const { latitude, longitude } = position.coords;
-          view.center = [longitude, latitude];
-          view.zoom = 18;
-  
-          // Ajouter un point pour l'emplacement de l'utilisateur
-          const pointGraphic = {
-            geometry: {
-              type: "point",
-              longitude: longitude,
-              latitude: latitude
-            },
-            symbol: {
-              type: "simple-marker",
-              style: "circle",
-              color: [36, 105, 92, 0.95],
-              size: "16px",
-              outline: { color: [220, 220, 220, 1], width: 1.5 }
-            }
-          };
-          graphicsLayer.add(pointGraphic);
-        },
-        function () {
-          console.error("Impossible d'obtenir la position de l'utilisateur.");
-        },
-        { enableHighAccuracy: true }
-  
+          function (position) {
+              const { latitude, longitude } = position.coords;
+
+              // تحديث مركز الخريطة
+              view.center = [longitude, latitude];
+              view.zoom = 18;
+
+              // إضافة نقطة الموقع على الخريطة
+              const userLocationGraphic = new Graphic({
+                  geometry: {
+                      type: "point",
+                      longitude: longitude,
+                      latitude: latitude
+                  },
+                  symbol: {
+                      type: "simple-marker",
+                      style: "circle",
+                      color: [36, 105, 92, 0.95],
+                      size: "16px",
+                      outline: { color: [220, 220, 220, 1], width: 1.5 }
+                  }
+              });
+
+              // التأكد من أن طبقة الرسومات مضافة
+              const graphicsLayer = new GraphicsLayer();
+              map.add(graphicsLayer);
+
+              graphicsLayer.add(userLocationGraphic); // إضافة النقطة الجديدة
+              console.log("تم تحديد الموقع الحالي وعرضه على الخريطة.");
+          },
+          function (error) {
+              console.error("Erreur lors de la récupération de la position de l'utilisateur:", error);
+          },
+          { enableHighAccuracy: true }
       );
-    }
-  
+
+      // وظيفة الانتقال إلى موقع المستخدم عند الضغط على الزر
+      function zoomToUserLocation() {
+          navigator.geolocation.getCurrentPosition(
+              function (position) {
+                  const { latitude, longitude } = position.coords;
+
+                  // تحديث مركز الخريطة إلى الموقع الحالي
+                  view.center = [longitude, latitude];
+                  view.zoom = 18;
+                  console.log("تم إعادة التكبير إلى الموقع الحالي.");
+              },
+              function (error) {
+                  console.error("Erreur lors de la récupération de la position de l'utilisateur:", error);
+              },
+              { enableHighAccuracy: true }
+          );
+      }
+
+      // ربط الزر بوظيفة الزوم
+      const zoomButton = document.getElementById("zoomButton");
+      zoomButton.addEventListener("click", zoomToUserLocation);
+  } else {
+      console.error("La géolocalisation n'est pas supportée par ce navigateur.");
+  }
+
+    
     // Afficher la fenêtre modale lors du clic sur l'élément dessiné
     view.on("click", function(event) {
       view.hitTest(event).then(function(response) {
