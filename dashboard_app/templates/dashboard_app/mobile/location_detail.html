@@ -1035,19 +1035,24 @@ require([
     // Masquer les boutons par défaut au début
     actionButtonsDiv.style.display = 'none';
 
-    
-    // التأكد من دعم الجيولكايشن
+    // Vérifier si le navigateur prend en charge la géolocalisation
     if (navigator.geolocation) {
-        // إضافة الموقع الحالي تلقائيًا إلى الخريطة عند التحقق من تشغيل GPS
-        navigator.geolocation.getCurrentPosition(
+        // Créer une couche de graphiques
+        const graphicsLayer = new GraphicsLayer();
+        map.add(graphicsLayer);
+
+        // Suivi de la position en temps réel
+        let currentPosition = null; // Variable pour stocker la position actuelle
+
+        navigator.geolocation.watchPosition(
             function (position) {
                 const { latitude, longitude } = position.coords;
+                currentPosition = { latitude, longitude }; // Mettre à jour la position actuelle
 
-                // تحديث مركز الخريطة
-                view.center = [longitude, latitude];
-                view.zoom = 18;
+                // Supprimer les graphiques existants
+                graphicsLayer.removeAll();
 
-                // إضافة نقطة الموقع على الخريطة
+                // Ajouter un nouveau graphique pour la position actuelle
                 const userLocationGraphic = new Graphic({
                     geometry: {
                         type: "point",
@@ -1063,45 +1068,35 @@ require([
                     }
                 });
 
-                // التأكد من أن طبقة الرسومات مضافة
-                const graphicsLayer = new GraphicsLayer();
-                map.add(graphicsLayer);
-
-                graphicsLayer.add(userLocationGraphic); // إضافة النقطة الجديدة
-                console.log("تم تحديد الموقع الحالي وعرضه على الخريطة.");
+                graphicsLayer.add(userLocationGraphic); // Ajouter le nouveau point
+                console.log("Position actuelle mise à jour et affichée sur la carte.");
             },
             function (error) {
-                console.error("Erreur lors de la récupération de la position de l'utilisateur:", error);
+                console.error("Erreur lors de la récupération de la position de l'utilisateur :", error);
             },
             { enableHighAccuracy: true }
         );
 
-        // وظيفة الانتقال إلى موقع المستخدم عند الضغط على الزر
+        // Fonction pour recentrer la carte sur la position actuelle
         function zoomToUserLocation() {
-            navigator.geolocation.getCurrentPosition(
-                function (position) {
-                    const { latitude, longitude } = position.coords;
+            if (currentPosition) {
+                const { latitude, longitude } = currentPosition;
 
-                    // تحديث مركز الخريطة إلى الموقع الحالي
-                    view.center = [longitude, latitude];
-                    view.zoom = 18;
-                    console.log("تم إعادة التكبير إلى الموقع الحالي.");
-                },
-                function (error) {
-                    console.error("Erreur lors de la récupération de la position de l'utilisateur:", error);
-                },
-                { enableHighAccuracy: true }
-            );
+                // Recentrer la carte
+                view.center = [longitude, latitude];
+                view.zoom = 18;
+                console.log("Zoom recentré sur la position actuelle.");
+            } else {
+                console.warn("Position actuelle indisponible. Veuillez activer la localisation.");
+            }
         }
 
-        // ربط الزر بوظيفة الزوم
+        // Associer le bouton à la fonction de recentrage
         const zoomButton = document.getElementById("zoomButton");
         zoomButton.addEventListener("click", zoomToUserLocation);
     } else {
-        console.error("La géolocalisation n'est pas supportée par ce navigateur.");
+        console.error("La géolocalisation n'est pas prise en charge par ce navigateur.");
     }
-
-
 
     // مراقبة التحديدات على الخريطة لتحديث عرض الأزرار
     view.on("click", function(event) {
