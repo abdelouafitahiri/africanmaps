@@ -710,9 +710,12 @@
     });
   
   
-        
     // Vérifier si le navigateur prend en charge la géolocalisation
     if (navigator.geolocation) {
+      // Créer une couche de graphiques
+      const graphicsLayer = new GraphicsLayer();
+      map.add(graphicsLayer);
+
       // Suivi de la position en temps réel
       let currentPosition = null; // Variable pour stocker la position actuelle
 
@@ -720,6 +723,9 @@
           function (position) {
               const { latitude, longitude } = position.coords;
               currentPosition = { latitude, longitude }; // Mettre à jour la position actuelle
+
+              // Supprimer les graphiques existants
+              graphicsLayer.removeAll();
 
               // Ajouter un nouveau graphique pour la position actuelle
               const userLocationGraphic = new Graphic({
@@ -734,8 +740,7 @@
                       color: [36, 105, 92, 0.95],
                       size: "16px",
                       outline: { color: [220, 220, 220, 1], width: 1.5 }
-                  },
-                  popupTemplate: null // Désactiver les fenêtres pop-up pour rendre le point non cliquable
+                  }
               });
 
               graphicsLayer.add(userLocationGraphic); // Ajouter le nouveau point
