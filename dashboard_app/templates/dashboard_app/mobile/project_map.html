@@ -710,62 +710,63 @@
     });
   
   
+        
+    // Vérifier si le navigateur prend en charge la géolocalisation
+    if (navigator.geolocation) {
+      // Suivi de la position en temps réel
+      let currentPosition = null; // Variable pour stocker la position actuelle
 
-    // Variable pour stocker la position actuelle
-    let currentPosition = null;
+      navigator.geolocation.watchPosition(
+          function (position) {
+              const { latitude, longitude } = position.coords;
+              currentPosition = { latitude, longitude }; // Mettre à jour la position actuelle
 
-    // Suivre en temps réel les changements de position via watchPosition
-    navigator.geolocation.watchPosition(
-        function (position) {
-            const { latitude, longitude } = position.coords;
+              // Ajouter un nouveau graphique pour la position actuelle
+              const userLocationGraphic = new Graphic({
+                  geometry: {
+                      type: "point",
+                      longitude: longitude,
+                      latitude: latitude
+                  },
+                  symbol: {
+                      type: "simple-marker",
+                      style: "circle",
+                      color: [36, 105, 92, 0.95],
+                      size: "16px",
+                      outline: { color: [220, 220, 220, 1], width: 1.5 }
+                  },
+                  popupTemplate: null // Désactiver les fenêtres pop-up pour rendre le point non cliquable
+              });
 
-            // Mettre à jour la position actuelle
-            currentPosition = { latitude, longitude };
+              graphicsLayer.add(userLocationGraphic); // Ajouter le nouveau point
+              console.log("Position actuelle mise à jour et affichée sur la carte.");
+          },
+          function (error) {
+              console.error("Erreur lors de la récupération de la position de l'utilisateur :", error);
+          },
+          { enableHighAccuracy: true }
+      );
 
-            // Supprimer les anciens graphiques et ajouter un nouveau point pour la position actuelle
-            graphicsLayer.removeAll();
-            const userLocationGraphic = new Graphic({
-                geometry: {
-                    type: "point",
-                    longitude: longitude,
-                    latitude: latitude
-                },
-                symbol: {
-                    type: "simple-marker", // Symbole pour représenter l'utilisateur
-                    style: "circle",
-                    color: [36, 105, 92, 0.95], // Couleur du point
-                    size: "16px", // Taille du point
-                    outline: { color: [220, 220, 220, 1], width: 1.5 } // Bordure du point
-                }
-            });
-            graphicsLayer.add(userLocationGraphic);
-            console.log("Position actuelle mise à jour et affichée sur la carte.");
-        },
-        function (error) {
-            // Gestion des erreurs lors de la récupération de la position
-            console.error("Erreur lors de la récupération de la position de l'utilisateur :", error);
-        },
-        { enableHighAccuracy: true } // Activer une haute précision pour les coordonnées
-    );
+      // Fonction pour recentrer la carte sur la position actuelle
+      function zoomToUserLocation() {
+          if (currentPosition) {
+              const { latitude, longitude } = currentPosition;
 
-    // Fonction pour recentrer la carte sur la position actuelle lorsque l'utilisateur clique sur un bouton
-    function zoomToUserLocation() {
-        if (currentPosition) {
-            const { latitude, longitude } = currentPosition;
+              // Recentrer la carte
+              view.center = [longitude, latitude];
+              view.zoom = 18;
+              console.log("Zoom recentré sur la position actuelle.");
+          } else {
+              console.warn("Position actuelle indisponible. Veuillez activer la localisation.");
+          }
+      }
 
-            // Recentrer la carte et définir un niveau de zoom
-            view.center = [longitude, latitude];
-            view.zoom = 18;
-            console.log("La carte a été recentrée sur la position actuelle.");
-        } else {
-            // Avertir si la position actuelle est indisponible
-            console.warn("Position actuelle indisponible. Veuillez activer la localisation.");
-        }
+      // Associer le bouton à la fonction de recentrage
+      const zoomButton = document.getElementById("zoomButton");
+      zoomButton.addEventListener("click", zoomToUserLocation);
+    } else {
+      console.error("La géolocalisation n'est pas prise en charge par ce navigateur.");
     }
-
-    // Associer l'action du bouton à la fonction de recentrage
-    const zoomButton = document.getElementById("zoomButton");
-    zoomButton.addEventListener("click", zoomToUserLocation);
 
 
     
